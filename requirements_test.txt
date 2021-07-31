@@ -1,0 +1,9 @@
+black
+gkeepapi
+isort
+keyring
+mypy
+pylint==2.9.5
+pynvim
+pytest
+pytest-cov
