@@ -6,7 +6,7 @@ from functools import cmp_to_key
 from gkeep.query import Query
 from gkeep.status import status
 from gkeep.thread_util import background
-from gkeep.util import NoteType
+from gkeep.util import NoteType, escape
 from gkeepapi import Keep, exception
 from gkeepapi.node import Label, TopLevelNode
 
@@ -59,7 +59,7 @@ class KeepApi(Keep):
 
     def hasUniqueTitle(self, note: TopLevelNode) -> bool:
         counter = self._archived_title_count if note.archived else self._title_count
-        return counter.get(note.title, 0) < 2
+        return counter.get(escape(note.title), 0) < 2
 
     def sync(self, callback: t.Callable[..., None], resync: bool = False) -> None:
         if resync:
@@ -104,9 +104,9 @@ class KeepApi(Keep):
         for note in self.all():
             if not note.trashed:
                 if note.archived:
-                    self._archived_title_count.update([note.title])
+                    self._archived_title_count.update([escape(note.title)])
                 else:
-                    self._title_count.update([note.title])
+                    self._title_count.update([escape(note.title)])
             if note_timestamps.get(note.id) != note.timestamps.updated:
                 updated_notes.add(note.id)
         return updated_notes

@@ -87,7 +87,6 @@ def _sync_header(note: TopLevelNode, header: Header, labels: t.Sequence[Label]) 
 
 
 def parse(api: KeepApi, lines: t.Sequence[str], note: TopLevelNode) -> None:
-
     header, labels, i = _parse_header(api, lines)
     _sync_header(note, header, labels)
     if isinstance(note, Note):

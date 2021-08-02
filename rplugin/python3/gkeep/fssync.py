@@ -51,15 +51,17 @@ def load_file(
     return note
 
 
-def load_new_files(api: KeepApi, config: Config) -> t.Iterator[t.Tuple[str, str]]:
+def load_new_files(api: KeepApi, config: Config) -> t.Dict[str, str]:
+    ret: t.Dict[str, str] = {}
     if config.sync_dir is None:
-        return
+        return ret
     logger.debug("Looking for new gkeep notes in %s", config.sync_dir)
     for filename, url in find_files(config):
         if url.id is None and api.get(url.id) is None:
             new_filename = create_note_from_file(api, config, filename, url)
             if new_filename is not None:
-                yield (filename, new_filename)
+                ret[filename] = new_filename
+    return ret
 
 
 def create_note_from_file(
@@ -157,7 +159,7 @@ def write_files(
             # If the new filename is different, we should write to the existing file
             # here, and the move will be taken care of in the rename operation
             new_filepath = existing_file
-        else:
+        elif existing_file is None:
             # It's possible that an ephemeral note has become a file note (due to
             # undeleting).  If that is the case, we should rename those buffers
             assert lines is not None
@@ -179,7 +181,11 @@ def write_files(
 
 def _soft_delete(filename: str) -> None:
     logger.warning("Local file has remote changes. Moving to backup %s", filename)
-    os.rename(filename, filename + ".local")
+    os.rename(filename, get_local_file(filename))
+
+
+def get_local_file(filename: str) -> str:
+    return filename + ".local"
 
 
 def _write_file(filename: str, lines: t.Iterable[str], keep_backup: bool) -> None:

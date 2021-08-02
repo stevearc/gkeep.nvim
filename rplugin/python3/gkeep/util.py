@@ -1,8 +1,10 @@
 import enum
 import logging
 import os
+import re
 import sys
 import typing as t
+import unicodedata
 from typing import TYPE_CHECKING
 
 import pynvim
@@ -71,9 +73,9 @@ class NoteUrl:
 
         ext = parser.get_ext(config, note)
         if api.hasUniqueTitle(note):
-            return f"{self.title}.{ext}"
+            return escape(f"{self.title}.{ext}")
         else:
-            return f"{self.title}:{self.id}.{ext}"
+            return escape(f"{self.title}:{self.id}.{ext}")
 
     def ephemeral_bufname(
         self, config: Config, note: t.Union[TopLevelNode, str]
@@ -127,3 +129,8 @@ def get_type(note: TopLevelNode) -> NoteEnum:
 
 def get_link(note: TopLevelNode) -> str:
     return f"https://keep.google.com/#NOTE/{note.server_id}"
+
+
+def escape(title: str) -> str:
+    normalized = unicodedata.normalize("NFKC", title)
+    return re.sub(r"[^\w\s\.-]", "", normalized)

@@ -7,7 +7,7 @@ from functools import partial
 import gkeep.api
 import gkeep.modal
 import gkeep.noteview
-from gkeep import parser, util
+from gkeep import fssync, parser, util
 from gkeep.config import KEEP_FT, Config
 from gkeep.modal import Align, Element, GridLayout, TextAlign
 from gkeep.query import Query
@@ -198,7 +198,7 @@ class NoteList(View):
     def _get_local_changed_file(self, note: NoteType) -> t.Optional[str]:
         filepath = NoteUrl.from_note(note).filepath(self._api, self._config, note)
         if filepath is not None:
-            local = filepath + ".local"
+            local = fssync.get_local_file(filepath)
             if os.path.exists(local):
                 return local
         return None

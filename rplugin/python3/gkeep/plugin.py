@@ -263,9 +263,7 @@ class GkeepPlugin:
     @status("Syncing new notes")
     @require_state(State.InitialSync)
     def _load_new_files(self) -> None:
-        renames = {}
-        for filename, new_filename in fssync.load_new_files(self._api, self._config):
-            renames[filename] = new_filename
+        renames = fssync.load_new_files(self._api, self._config)
         self._config.state = State.Running
         if renames:
             self.dispatch("rename_files", renames)
