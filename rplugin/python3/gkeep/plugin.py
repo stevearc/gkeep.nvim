@@ -156,7 +156,7 @@ class GkeepPlugin:
     def health_report(self) -> t.Dict[str, t.Any]:
         return {
             "logged_in": self._api.is_logged_in,
-            "email": self._api.getEmail(),
+            "email": self._api.get_email(),
             "support_neorg": self._config.support_neorg,
             "sync_dir": self._config.sync_dir,
         }

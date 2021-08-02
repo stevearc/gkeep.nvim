@@ -72,7 +72,7 @@ class NoteUrl:
         from gkeep import parser
 
         ext = parser.get_ext(config, note)
-        if api.hasUniqueTitle(note):
+        if api.has_unique_title(note):
             return escape(f"{self.title}.{ext}")
         else:
             return escape(f"{self.title}:{self.id}.{ext}")

@@ -51,13 +51,13 @@ class KeepApi(Keep):
                     return None
         return found
 
-    def getEmail(self) -> t.Optional[str]:
+    def get_email(self) -> t.Optional[str]:
         auth = self._keep_api.getAuth()
         if auth is not None:
             return auth.getEmail()
         return None
 
-    def hasUniqueTitle(self, note: TopLevelNode) -> bool:
+    def has_unique_title(self, note: TopLevelNode) -> bool:
         counter = self._archived_title_count if note.archived else self._title_count
         return counter.get(escape(note.title), 0) < 2
 
