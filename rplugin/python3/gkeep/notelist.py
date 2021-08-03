@@ -303,7 +303,7 @@ class NoteList(View):
         elif type == NoteEnum.LIST:
             note = self._api.createList(title, [("", False)])
         else:
-            self._vim.err_write(f"Unknown note type '{type}'\n")
+            util.echoerr(self._vim, f"Unknown note type '{type}'")
             return
         if not self.query.pinned(note.pinned):
             note.pinned = not note.pinned

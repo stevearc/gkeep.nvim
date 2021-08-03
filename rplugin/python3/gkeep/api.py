@@ -61,7 +61,12 @@ class KeepApi(Keep):
         counter = self._archived_title_count if note.archived else self._title_count
         return counter.get(escape(note.title), 0) < 2
 
-    def sync(self, callback: t.Callable[..., None], resync: bool = False) -> None:
+    def sync(
+        self,
+        callback: t.Callable[..., None],
+        error_callback: t.Callable[[str], None],
+        resync: bool = False,
+    ) -> None:
         if resync:
             keep_version = None
             changed_nodes = []
@@ -77,7 +82,14 @@ class KeepApi(Keep):
             logger.debug("Sending %d changed nodes to server", len(changed_nodes))
         if changed_labels:
             logger.debug("Sending %d changed labels to server", len(changed_labels))
-        self._sync_notes(resync, keep_version, changed_nodes, changed_labels, callback)
+        self._sync_notes(
+            resync,
+            keep_version,
+            changed_nodes,
+            changed_labels,
+            callback,
+            error_callback,
+        )
 
     def apply_updates(
         self,
@@ -119,44 +131,51 @@ class KeepApi(Keep):
         changed_nodes: t.List[t.Any],
         changed_labels: t.Optional[t.List[t.Any]],
         callback: t.Callable[..., None],
+        error_callback: t.Callable[[str], None],
     ) -> None:
-        user_info = []
-        nodes = []
-        # Fetch updates until we reach the newest version.
-        msg = "Fetching notes" if resync else "Syncing changes"
-        with status(msg):
-            while True:
-                logger.debug("Starting keep sync: %s", keep_version)
+        try:
+            user_info: t.List[t.Any] = []
+            nodes: t.List[t.Any] = []
+            # Fetch updates until we reach the newest version.
+            msg = "Fetching notes" if resync else "Syncing changes"
+            with status(msg):
+                while True:
+                    logger.debug("Starting keep sync: %s", keep_version)
 
-                # Collect any changes and send them up to the server.
-                changes = self._keep_api.changes(
-                    target_version=keep_version,
-                    nodes=changed_nodes,
-                    labels=changed_labels,
-                )
-                changed_nodes = []
-                changed_labels = None
+                    # Collect any changes and send them up to the server.
+                    changes = self._keep_api.changes(
+                        target_version=keep_version,
+                        nodes=changed_nodes,
+                        labels=changed_labels,
+                    )
+                    changed_nodes = []
+                    changed_labels = None
 
-                if changes.get("forceFullResync"):
-                    raise exception.ResyncRequiredException("Full resync required")
+                    if changes.get("forceFullResync"):
+                        raise exception.ResyncRequiredException("Full resync required")
 
-                if changes.get("upgradeRecommended"):
-                    raise exception.UpgradeRecommendedException("Upgrade recommended")
+                    if changes.get("upgradeRecommended"):
+                        raise exception.UpgradeRecommendedException(
+                            "Upgrade recommended"
+                        )
 
-                if "userInfo" in changes:
-                    user_info.append(changes["userInfo"])
+                    if "userInfo" in changes:
+                        user_info.append(changes["userInfo"])
 
-                if "nodes" in changes:
-                    nodes.append(changes["nodes"])
+                    if "nodes" in changes:
+                        nodes.append(changes["nodes"])
 
-                keep_version = changes["toVersion"]
-                logger.debug("Finishing sync: %s", keep_version)
+                    keep_version = changes["toVersion"]
+                    logger.debug("Finishing sync: %s", keep_version)
 
-                # Check if there are more changes to retrieve.
-                if not changes["truncated"]:
-                    break
+                    # Check if there are more changes to retrieve.
+                    if not changes["truncated"]:
+                        break
 
-        callback(resync, keep_version, user_info, nodes)
+            callback(resync, keep_version, user_info, nodes)
+        except Exception as e:
+            error_callback(str(e))
+            raise
 
     @background(lock=False)
     @status("Searching")

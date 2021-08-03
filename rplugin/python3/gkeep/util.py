@@ -103,6 +103,14 @@ def dispatch(vim: pynvim.Nvim, config: Config, func: str, *args: t.Any) -> None:
         vim.async_call(vim.exec_lua, "require'gkeep'.dispatch(...)", func, *args)
 
 
+def echoerr(vim: pynvim.Nvim, message: str) -> None:
+    vim.api.echo(
+        [(message, "Error")],
+        True,
+        {},
+    )
+
+
 def checkbox(checked: t.Union[bool, Literal["partial"]]) -> str:
     if checked == "partial":
         return "[-] "

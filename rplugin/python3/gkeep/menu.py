@@ -290,7 +290,7 @@ class Menu(View):
         elif item.icon == "search":
             self._rename_search(item)
         else:
-            self._vim.err_write("Can only rename labels and searches\n")
+            util.echoerr(self._vim, "Can only rename labels and searches")
 
     def _rename_search(self, item: MenuItem, name: str = None) -> None:
         if name is None:
@@ -305,8 +305,8 @@ class Menu(View):
 
     def _rename_label(self, item: MenuItem, name: str = None) -> None:
         if self._config.sync_dir is not None:
-            self._vim.err_write(
-                "Renaming labels is not supported with g:gkeep_sync_dir set\n"
+            util.echoerr(
+                self._vim, "Renaming labels is not supported with g:gkeep_sync_dir set"
             )
             return
         if name is None:
@@ -369,7 +369,7 @@ class Menu(View):
         elif item.icon == "label":
             self.cmd_rename()
         else:
-            self._vim.err_write("Can only edit labels and searches\n")
+            util.echoerr(self._vim, "Can only edit labels and searches")
 
     def _edit_search(self, item: MenuItem) -> None:
         self._modal.prompt.show(

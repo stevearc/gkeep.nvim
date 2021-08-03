@@ -73,8 +73,8 @@ def require_state(
                     "Ignoring method %s. State %s not allowed", f.__name__, state
                 )
                 if log:
-                    self._vim.err_write(
-                        f"Cannot perform action while Gkeep is {state.name}\n"
+                    util.echoerr(
+                        self._vim, f"Cannot perform action while Gkeep is {state.name}"
                     )
             else:
                 f(self, *args, **kwargs)
@@ -149,7 +149,7 @@ class GkeepPlugin:
         if hasattr(self, meth):
             getattr(self, meth)(*args)
         else:
-            self._vim.err_write(f"Unknown Gkeep command '{cmd}'\n")
+            util.echoerr(self._vim, f"Unknown Gkeep command '{cmd}'")
 
     @pynvim.function("_gkeep_health", sync=True)
     @unwrap_args
@@ -198,7 +198,7 @@ class GkeepPlugin:
         if hasattr(self, meth):
             getattr(self, meth)(*args)
         else:
-            self._vim.err_write(f"Unknown Gkeep event '{event}'\n")
+            util.echoerr(self._vim, f"Unknown Gkeep event '{event}'")
 
     @background
     @require_state(State.Uninitialized)
@@ -222,7 +222,11 @@ class GkeepPlugin:
                 # *then* we will process any changes in the note files.
                 self._api.resume(email, token, state=state, sync=False)
         self.dispatch("refresh")
-        self._api.sync(partial(self.dispatch, "finish_sync"), True)
+        self._api.sync(
+            partial(self.dispatch, "finish_sync"),
+            partial(self.dispatch, "handle_sync_error"),
+            True,
+        )
 
     @require_state(State.Running)
     def event_sync(self, resync: bool = False, force: bool = False) -> None:
@@ -233,7 +237,23 @@ class GkeepPlugin:
         if not force and not resync and not self._api.is_dirty:
             return
         logger.debug("Syncing gkeep %s", "(force refresh)" if resync else "")
-        self._api.sync(partial(self.dispatch, "finish_sync"), resync)
+        self._api.sync(
+            partial(self.dispatch, "finish_sync"),
+            partial(self.dispatch, "handle_sync_error"),
+            resync,
+        )
+
+    def event_handle_sync_error(self, error: str) -> None:
+        logger.error(
+            "Got error during sync: %s\n  deactivating gkeep for data integrity", error
+        )
+        util.echoerr(
+            self._vim, "Google Keep sync error. Use :Gkeep login to re-initialize"
+        )
+        self._config.state = State.Uninitialized
+        self._config.delete_state()
+        self._api.logout()
+        self._menu.refresh(True)
 
     @require_state(State.InitialSync, State.Running)
     def event_finish_sync(
@@ -375,7 +395,7 @@ class GkeepPlugin:
         bufnr = self._vim.buffers[int(bufnrstr)]
         url = parser.url_from_file(self._config, bufnr.name, bufnr)
         if not url:
-            self._vim.err_write(f"Buffer {bufnrstr} has malformed Gkeep bufname\n")
+            util.echoerr(self._vim, f"Buffer {bufnrstr} has malformed Gkeep bufname")
             return
         self._noteview.save_buffer(bufnr)
         self._notelist.rerender_note(url.id)
@@ -547,7 +567,6 @@ class GkeepPlugin:
         self._config.delete_state()
         self._api.logout()
         self._menu.refresh(True)
-        self._notelist.rerun_query()
 
     @require_state(State.Uninitialized, State.Running)
     def cmd_login(self, email: str = None, password: str = None) -> None:
@@ -594,7 +613,7 @@ class GkeepPlugin:
             if winid is not None:
                 self._vim.current.window = winid
         else:
-            self._vim.err_write(f"Unknown target '{target}'\n")
+            util.echoerr(self._vim, f"Unknown target '{target}'")
 
     @require_state(State.Running)
     def cmd_goto(self) -> None:
@@ -624,10 +643,10 @@ class GkeepPlugin:
     def cmd_browse(self) -> None:
         note = self._get_current_note()
         if note is None:
-            self._vim.err_write("Google Keep note not found\n")
+            util.echoerr(self._vim, "Google Keep note not found")
             return
         if note is None:
-            self._vim.err_write("Google Keep note not found\n")
+            util.echoerr(self._vim, "Google Keep note not found")
             return
         link = util.get_link(note)
         cmd = None
@@ -638,8 +657,9 @@ class GkeepPlugin:
         else:
             cmd = os.environ.get("BROWSER")
         if cmd is None:
-            self._vim.err_write(
-                "Could not find web browser. Set the BROWSER environment variable and restart\n"
+            util.echoerr(
+                self._vim,
+                "Could not find web browser. Set the BROWSER environment variable and restart",
             )
         else:
             subprocess.call([cmd, link])
@@ -648,7 +668,7 @@ class GkeepPlugin:
     def cmd_yank(self) -> None:
         note = self._get_current_note()
         if note is None:
-            self._vim.err_write("Google Keep note not found\n")
+            util.echoerr(self._vim, "Google Keep note not found")
             return
         line = f"[{note.title}]({note.id})"
         self._vim.funcs.setreg("x", line)
@@ -714,7 +734,7 @@ class GkeepPlugin:
         bufnr = self._vim.current.buffer
         url = parser.url_from_file(self._config, bufnr.name, bufnr)
         if url is None:
-            return self._vim.err_write("Not inside a Google Keep note\n")
+            return util.echoerr(self._vim, "Not inside a Google Keep note")
         note = self._api.get(url.id)
         if note is None:
             return

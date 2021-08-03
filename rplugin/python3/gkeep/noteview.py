@@ -42,7 +42,7 @@ class NoteView:
             return
         note = self._api.get(url.id)
         if note is None:
-            self._vim.err_write(f"Note {url.id} not found\n")
+            util.echoerr(self._vim, f"Note {url.id} not found")
             return
 
         parser.parse(self._api, self._config, bufnr, note)

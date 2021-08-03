@@ -117,7 +117,7 @@ class View(ABC):
         if hasattr(self, meth):
             getattr(self, meth)(*args)
         else:
-            self._vim.err_write(f"Unknown Gkeep action '{action}'\n")
+            util.echoerr(self._vim, f"Unknown Gkeep action '{action}'")
 
     def cmd_show_help(self) -> None:
         elements = []
