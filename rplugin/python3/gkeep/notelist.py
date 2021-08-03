@@ -505,21 +505,33 @@ class NoteList(View):
 
     def cmd_cursor_moved(self) -> None:
         self._preferred_item = None
-
         if self._is_preview_open():
-            note = self.get_note_under_cursor()
-            if note is None or note == self._preview_item:
-                return
-            self._preview_item = note
-            self._preview_note(note)
-        else:
-            self._preview_item = None
+            self._preview_item = self.get_note_under_cursor()
+            self._vim.exec_lua(
+                "vim.defer_fn(function() vim.fn._gkeep_list_action('update_preview') end, 10)"
+            )
+
+    def cmd_update_preview(self) -> None:
+        win = self._get_preview_win()
+        if win is None:
+            return
+        note = self.get_note_under_cursor()
+        if note is None or note != self._preview_item:
+            return
+        buffer = win.buffer
+        url = parser.url_from_file(self._config, buffer.name, buffer)
+        if url is None or url.id == note.id:
+            return
+        self._preview_note(note)
 
     def _is_preview_open(self) -> bool:
+        return self._get_preview_win() is not None
+
+    def _get_preview_win(self) -> t.Optional[Window]:
         for window in self._vim.current.tabpage.windows:
             if window.options["previewwindow"]:
-                return True
-        return False
+                return window
+        return None
 
     def cmd_preview(self) -> None:
         if self._is_preview_open():
