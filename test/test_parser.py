@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from gkeep import parser
 from gkeep.config import Config
-from gkeep.parser import keep, neorg
+from gkeep.parser import keep
 from gkeep.util import NoteEnum
 from gkeepapi.node import Label, List, Note
 

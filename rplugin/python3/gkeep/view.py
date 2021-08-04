@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 import gkeep.api
 import gkeep.config
+from gkeep import util
 from gkeep.modal import Element, GridLayout, Modal
 from pynvim.api import Buffer, Nvim, Window
 
@@ -25,7 +26,7 @@ class View(ABC):
 
     @abstractmethod
     def _get_shortcuts(self) -> t.List[t.Tuple[str, str, str, str]]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def bufnr(self) -> t.Optional[Buffer]:
@@ -64,7 +65,7 @@ class View(ABC):
 
     @abstractmethod
     def _setup_buffer(self, buffer: Buffer) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _configure_win(self, window: Window) -> None:
         window.options["winfixwidth"] = True

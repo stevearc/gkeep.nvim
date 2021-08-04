@@ -286,6 +286,7 @@ must use the `.keep` extension to be detected (or `.norg` if using
 [Neorg](#neorg)).
 
 #### Merge conflicts
+
 If the Google Keep servers and your local files disagree about the content of a
 note, the file on your computer will be renamed to `<filename>.local` and the
 original file will be updated to the server latest. When a `.local` file is
@@ -295,6 +296,15 @@ present, the note will appear with a red "merge" icon in the list:
 
 If you open the note, it will open in a vimdiff split. Resolve the merge
 conflict and then delete the `.local` file to get back to a good state.
+
+#### Changing files outside of vim
+
+You can make edits to the synced note files outside of vim, and the changes will
+be picked up and synced the next time you open vim (and start Gkeep). To protect
+you from data loss, when gkeep detects changes that are made from outside of
+vim, a backup of the note will be made in Google Keep before uploading those
+changes. Backups will appear in your Trash (and thus will be deleted after 7
+days), and will have `[Backup]` in the title.
 
 ## Third-party integrations
 

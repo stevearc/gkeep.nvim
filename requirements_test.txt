@@ -1,4 +1,5 @@
 black
+freezegun
 gkeepapi
 isort
 keyring
@@ -7,3 +8,4 @@ pylint==2.9.5
 pynvim
 pytest
 pytest-cov
+types-freezegun

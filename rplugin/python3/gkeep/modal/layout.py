@@ -237,35 +237,35 @@ class ILayout(ABC, t.Generic[T]):
 
     @abstractmethod
     def get_min_width(self) -> int:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def get_min_height(self) -> int:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def set_width(self, width: int) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def get_selected(self) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def set_selected(self, value: t.Optional[T]) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def move(self, direction: Direction) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def get_lines(self) -> t.List[str]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abstractmethod
     def set_highlight(self) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class GridLayout(ILayout, t.Generic[T]):

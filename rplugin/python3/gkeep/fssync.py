@@ -2,11 +2,14 @@ import hashlib
 import logging
 import os
 import typing as t
+from abc import ABC, abstractmethod
+from datetime import datetime
 
 import gkeep.parser as parser
 from gkeep.api import KeepApi
-from gkeep.config import Config
+from gkeep.config import Config, State
 from gkeep.parser.keep import detect_note_type
+from gkeep.status import status
 from gkeep.util import NoteEnum, NoteUrl
 from gkeepapi.node import List, Note, TopLevelNode
 from pynvim.api import Buffer
@@ -14,17 +17,167 @@ from pynvim.api import Buffer
 logger = logging.getLogger(__name__)
 
 
-def find_files_with_changes(api: KeepApi, config: Config) -> t.Iterator[str]:
-    if config.sync_dir is None:
-        return
-    logger.debug("Loading gkeep files from %s", config.sync_dir)
-    for filename, url in find_files(config):
-        note = load_file(api, config, filename, url)
-        if note is None or note.dirty:
-            yield filename
+class NoteFile(t.NamedTuple):
+    url: NoteUrl
+    bufname: str
+    lines: t.Optional[t.Sequence[str]]
+
+    @classmethod
+    def from_note(cls, api: KeepApi, config: Config, note: TopLevelNode) -> "NoteFile":
+        url = NoteUrl.from_note(note)
+        bufname = url.bufname(api, config, note)
+        if NoteUrl.is_ephemeral(bufname):
+            lines = None
+        else:
+            lines = list(parser.serialize(config, note))
+        return cls(url, bufname, lines)
 
 
-def find_files(config: Config) -> t.Iterator[t.Tuple[str, NoteUrl]]:
+class ISync(ABC):
+    @abstractmethod
+    def start(self, state: t.Any) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def finish_startup(self, updated_notes: t.Container[str]) -> t.Dict[str, str]:
+        """
+        Resolve any changes needed for initial sync
+
+        Will be run in background thread, but should have exclusive control over KeepApi
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def write_files(self, updated_notes: t.Sequence[NoteFile]) -> t.Dict[str, str]:
+        """
+        Write any necessary file changes to disk
+
+        Will run in background thread, and should not touch the KeepApi
+        """
+        raise NotImplementedError
+
+
+class NoopSync(ISync):
+    def __init__(self, api: KeepApi):
+        self._api = api
+
+    def start(self, state: t.Any) -> None:
+        restore_state(self._api, state)
+
+    def finish_startup(self, updated_notes: t.Container[str]) -> t.Dict[str, str]:
+        return {}
+
+    def write_files(self, updated_notes: t.Sequence[NoteFile]) -> t.Dict[str, str]:
+        return {}
+
+
+@status("Loading cache")
+def restore_state(api: KeepApi, state: t.Any) -> None:
+    if state is not None:
+        with status("Loading cache"):
+            api.restore(state)
+
+
+class FileSync(ISync):
+    def __init__(self, api: KeepApi, config: Config):
+        self._api = api
+        self._config = config
+        self._protected_files: t.Set[str] = set()
+
+    def start(self, state: t.Any) -> None:
+        assert self._config.state == State.Uninitialized
+        restore_state(self._api, state)
+        if state is None:
+            for filename, _ in _find_files(self._config):
+                self._protected_files.add(filename)
+        else:
+            with status("Reading note files"):
+                self._protected_files.update(self._find_files_with_changes())
+
+    def finish_startup(self, updated_notes: t.Container[str]) -> t.Dict[str, str]:
+        assert self._config.state == State.InitialSync
+        with status("Writing note files"):
+            renamed_files, need_load = _write_files(
+                self._config,
+                self._protected_files,
+                [
+                    NoteFile.from_note(self._api, self._config, n)
+                    for n in self._api.all()
+                ],
+                updated_notes,
+                True,
+            )
+        with status("Loading changed files"):
+            for filename in need_load:
+                logger.warning(
+                    "Changes detected in %s. Backing up Google Keep note",
+                    filename,
+                )
+                url = parser.url_from_file(self._config, filename)
+                assert url is not None
+                note = self._api.get(url.id)
+                assert note is not None
+                backup = _make_backup(note)
+                self._api.add(backup)
+                self._load_file(filename, url)
+        with status("Loading new note files"):
+            renamed_files.update(self._load_new_files())
+        self._protected_files.clear()
+        return renamed_files
+
+    def write_files(self, updated_notes: t.Sequence[NoteFile]) -> t.Dict[str, str]:
+        assert self._config.state == State.Running
+        renames, _ = _write_files(
+            self._config,
+            set(),
+            updated_notes,
+            {nf.url.id for nf in updated_notes if nf.url.id is not None},
+            False,
+        )
+        return renames
+
+    def _load_new_files(self) -> t.Dict[str, str]:
+        ret = {}
+        logger.debug("Looking for new gkeep notes in %s", self._config.sync_dir)
+        for filename, url in _find_files(self._config):
+            if url.id is None and self._api.get(url.id) is None:
+                new_filename = create_note_from_file(
+                    self._api, self._config, filename, url
+                )
+                if new_filename is not None:
+                    ret[filename] = new_filename
+        return ret
+
+    def _find_files_with_changes(self) -> t.List[str]:
+        state = self._api.dump()
+        logger.debug("Loading gkeep files from %s", self._config.sync_dir)
+        ret = []
+        for filename, url in _find_files(self._config):
+            note = self._load_file(filename, url)
+            if note is None or note.dirty:
+                ret.append(filename)
+        # Clear the dirty state from reading in files.
+        # We want this first sync to simply update our internal state, and
+        # *then* we will process any changes in the note files.
+        self._api.restore(state)
+        return ret
+
+    def _load_file(
+        self,
+        filename: str,
+        url: NoteUrl,
+    ) -> t.Optional[TopLevelNode]:
+        note = self._api.get(url.id)
+        if note is None:
+            return None
+
+        parser.parse(self._api, self._config, filename, note)
+        if not note.title:
+            note.title = url.title
+        return note
+
+
+def _find_files(config: Config) -> t.Iterator[t.Tuple[str, NoteUrl]]:
     if config.sync_dir is None:
         return
     for root, _, files in os.walk(config.sync_dir):
@@ -33,35 +186,6 @@ def find_files(config: Config) -> t.Iterator[t.Tuple[str, NoteUrl]]:
             url = parser.url_from_file(config, fullpath)
             if url is not None:
                 yield (fullpath, url)
-
-
-def load_file(
-    api: KeepApi,
-    config: Config,
-    filename: str,
-    url: NoteUrl,
-) -> t.Optional[TopLevelNode]:
-    note = api.get(url.id)
-    if note is None:
-        return None
-
-    parser.parse(api, config, filename, note)
-    if not note.title:
-        note.title = url.title
-    return note
-
-
-def load_new_files(api: KeepApi, config: Config) -> t.Dict[str, str]:
-    ret: t.Dict[str, str] = {}
-    if config.sync_dir is None:
-        return ret
-    logger.debug("Looking for new gkeep notes in %s", config.sync_dir)
-    for filename, url in find_files(config):
-        if url.id is None and api.get(url.id) is None:
-            new_filename = create_note_from_file(api, config, filename, url)
-            if new_filename is not None:
-                ret[filename] = new_filename
-    return ret
 
 
 def create_note_from_file(
@@ -103,36 +227,46 @@ def create_note_from_file(
     return None
 
 
-class NoteFile(t.NamedTuple):
-    url: NoteUrl
-    bufname: str
-    lines: t.Optional[t.Sequence[str]]
+def _make_backup(note: TopLevelNode) -> TopLevelNode:
+    if isinstance(note, Note):
+        backup = Note()
+        backup.text = note.text
+    elif isinstance(note, List):
+        backup = List()
+        map = {}
+        for item in note.items:
+            new_item = backup.add(item.text, item.checked, item.sort)
+            map[item.id] = new_item
+            if item.indented:
+                map[item.parent_item.id].indent(new_item)
+    else:
+        raise NotImplementedError
+    backup.trash()
+    backup.title = f"[Backup {datetime.now().date()}] {note.title}"
+    return backup
 
-    @classmethod
-    def from_note(cls, api: KeepApi, config: Config, note: TopLevelNode) -> "NoteFile":
-        url = NoteUrl.from_note(note)
-        bufname = url.bufname(api, config, note)
-        if NoteUrl.is_ephemeral(bufname):
-            lines = None
-        else:
-            lines = list(parser.serialize(config, note))
-        return cls(url, bufname, lines)
 
-
-def write_files(
-    api: KeepApi,
+def _write_files(
     config: Config,
     protected_files: t.Container[str],
     notes: t.Sequence[NoteFile],
     updated_notes: t.Container[str],
-) -> t.Dict[str, str]:
+    initial_load: bool,
+) -> t.Tuple[t.Dict[str, str], t.Sequence[str]]:
+    """
+    Write updated files to disk, resolving merge conflicts
+
+    This intentionally does not use KeepApi because it needs to be able to run in a
+    background thread while the main thread can still make changes to notes.
+    """
     if config.sync_dir is None:
-        return {}
+        return {}, []
     renames = {}
+    need_load = []
 
     # Find all pre-existing note files
     files_by_id = {}
-    for notefile, url in find_files(config):
+    for notefile, url in _find_files(config):
         if url is not None and url.id:
             files_by_id[url.id] = notefile
 
@@ -164,19 +298,19 @@ def write_files(
             # undeleting).  If that is the case, we should rename those buffers
             assert lines is not None
             renames[url.ephemeral_bufname(config, "\n".join(lines))] = new_filepath
-        assert lines is not None
 
+        assert lines is not None
         if not os.path.exists(new_filepath):
             _write_file(new_filepath, lines, False)
-        elif _hash_content(lines) != _hash_file(new_filepath):
-            if url.id in updated_notes:
-                _write_file(new_filepath, lines, new_filepath in protected_files)
-            else:
-                load_file(api, config, new_filepath, url)
+        elif url.id in updated_notes and _content_changed(lines, new_filepath):
+            _write_file(new_filepath, lines, new_filepath in protected_files)
+        elif initial_load and _content_changed(lines, new_filepath):
+            need_load.append(new_filepath)
 
-    for oldfile in files_by_id.values():
-        _soft_delete(oldfile)
-    return renames
+    if initial_load:
+        for oldfile in files_by_id.values():
+            _soft_delete(oldfile)
+    return renames, need_load
 
 
 def _soft_delete(filename: str) -> None:
@@ -192,10 +326,14 @@ def _write_file(filename: str, lines: t.Iterable[str], keep_backup: bool) -> Non
     if os.path.exists(filename) and keep_backup:
         _soft_delete(filename)
     logger.info("Writing %s", filename)
-    with open(filename, "w") as ofile:
+    with open(filename, "w", encoding="utf-8") as ofile:
         for line in lines:
             ofile.write(line)
             ofile.write("\n")
+
+
+def _content_changed(lines: t.Sequence[str], filename: str) -> bool:
+    return _hash_content(lines) != _hash_file(filename)
 
 
 def _hash_file(filename: str) -> str:

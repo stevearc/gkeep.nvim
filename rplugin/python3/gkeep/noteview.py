@@ -3,7 +3,7 @@ import os
 
 import gkeep.api
 import gkeep.config
-import gkeep.parser as parser
+from gkeep import parser, util
 from gkeep.util import NoteUrl, get_type
 from pynvim.api import Buffer, Nvim
 

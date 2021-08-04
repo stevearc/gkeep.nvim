@@ -9,21 +9,20 @@ import time
 import typing as t
 from functools import partial, wraps
 
-import gkeep.fssync as fssync
 import gkeep.menu
 import gkeep.modal
 import gkeep.notelist
 import gkeep.noteview
 import keyring
 import pynvim
-from gkeep import parser, util
+from gkeep import fssync, parser, util
 from gkeep.api import KeepApi
 from gkeep.config import Config, State
 from gkeep.menu import Position
 from gkeep.modal import Align, ConfirmResult
 from gkeep.parser import ALLOWED_EXT, keep
 from gkeep.query import Query
-from gkeep.status import get_status, status
+from gkeep.status import get_status
 from gkeep.thread_util import background
 from gkeep.util import NoteUrl, get_type
 from gkeepapi.node import List, TopLevelNode
@@ -88,7 +87,6 @@ def require_state(
 class GkeepPlugin:
     def __init__(self, vim: pynvim.Nvim) -> None:
         self._vim = vim
-        self._protected_files: t.Set[str] = set()
         cache_dir = vim.funcs.stdpath("cache")
         logfile = os.path.join(cache_dir, "gkeep.log")
         handler = logging.handlers.RotatingFileHandler(
@@ -128,7 +126,11 @@ class GkeepPlugin:
         self.dispatch = partial(util.dispatch, self._vim, self._config)
         # The first exec_lua call takes a while in menu.render, but for some reason
         # calling it here is very fast and prevents the delay later.
-        self.dispatch("refresh")
+        self._vim.exec_lua("(function() end)()")
+        if self._config.sync_dir:
+            self._sync: fssync.ISync = fssync.FileSync(self._api, self._config)
+        else:
+            self._sync = fssync.NoopSync(self._api)
 
     @pynvim.shutdown_hook
     def on_shutdown(self) -> None:
@@ -203,30 +205,34 @@ class GkeepPlugin:
     @background
     @require_state(State.Uninitialized)
     def _resume(self, email: str, token: str, state: t.Optional[t.Any]) -> None:
-        logger.info("Resuming gkeep session for %s", email)
-        with status("Loading cache"):
-            self._api.resume(email, token, state=state, sync=False)
+        self._api.resume(email, token, state=None, sync=False)
         if not self._api.is_logged_in:
             return
+        logger.info("Resuming gkeep session for %s", email)
+        self._sync.start(state)
         self._config.state = State.InitialSync
-        if state is None:
-            for filename, _ in fssync.find_files(self._config):
-                self._protected_files.add(filename)
-        else:
-            with status("Reading notes from disk"):
-                self._protected_files.update(
-                    fssync.find_files_with_changes(self._api, self._config)
-                )
-                # Clear the dirty state from reading in files.
-                # We want this first sync to simply update our internal state, and
-                # *then* we will process any changes in the note files.
-                self._api.resume(email, token, state=state, sync=False)
-        self.dispatch("refresh")
         self._api.sync(
-            partial(self.dispatch, "finish_sync"),
+            self._finish_initial_sync,
             partial(self.dispatch, "handle_sync_error"),
-            True,
         )
+        self.dispatch("refresh", True)
+
+    def _finish_initial_sync(
+        self,
+        resync: bool,
+        keep_version: str,
+        user_info: t.Any,
+        nodes: t.Sequence[t.Any],
+    ) -> None:
+        updated_notes = self._api.apply_updates(resync, keep_version, user_info, nodes)
+        self._config.save_state(self._api.dump())
+        logger.debug("Startup sync complete. Updated %d notes", len(updated_notes))
+        renames = self._sync.finish_startup(updated_notes)
+        self._config.state = State.Running
+        self.dispatch("rename_files", renames)
+        self.dispatch("refresh", True)
+        self.dispatch("sync")
+        self.sync_bg_thread()
 
     @require_state(State.Running)
     def event_sync(self, resync: bool = False, force: bool = False) -> None:
@@ -244,18 +250,13 @@ class GkeepPlugin:
         )
 
     def event_handle_sync_error(self, error: str) -> None:
-        logger.error(
-            "Got error during sync: %s\n  deactivating gkeep for data integrity", error
-        )
+        logger.error("Got error during sync: %s\n  deactivating gkeep!", error)
         util.echoerr(
             self._vim, "Google Keep sync error. Use :Gkeep login to re-initialize"
         )
-        self._config.state = State.Uninitialized
-        self._config.delete_state()
-        self._api.logout()
-        self._menu.refresh(True)
+        self._reset_all_state()
 
-    @require_state(State.InitialSync, State.Running)
+    @require_state(State.Running)
     def event_finish_sync(
         self,
         resync: bool,
@@ -269,41 +270,18 @@ class GkeepPlugin:
         self.event_refresh(resync)
         self._config.save_state(self._api.dump())
         logger.debug("Sync complete. Updated %d notes", len(updated_notes))
-
-        if self._config.sync_dir:
-            notes = [
-                fssync.NoteFile.from_note(self._api, self._config, n)
-                for n in self._api.all()
-            ]
-            self._write_files(notes, updated_notes)
-        if self._config.state == State.InitialSync:
-            self._load_new_files()
+        notes = []
+        for id in updated_notes:
+            note = self._api.get(id)
+            if note is not None:
+                notes.append(fssync.NoteFile.from_note(self._api, self._config, note))
+        self._write_files(notes)
 
     @background
-    @status("Syncing new notes")
-    @require_state(State.InitialSync)
-    def _load_new_files(self) -> None:
-        renames = fssync.load_new_files(self._api, self._config)
-        self._config.state = State.Running
+    def _write_files(self, updated_notes: t.Sequence[fssync.NoteFile]) -> None:
+        renames = self._sync.write_files(updated_notes)
         if renames:
             self.dispatch("rename_files", renames)
-        self.dispatch("refresh", True)
-        self.dispatch("sync")
-        self.sync_bg_thread()
-
-    @require_state(State.InitialSync, State.Running)
-    @background
-    def _write_files(
-        self,
-        notes: t.Sequence[fssync.NoteFile],
-        updated_notes: t.Set[str],
-    ) -> None:
-        renamed_files = fssync.write_files(
-            self._api, self._config, self._protected_files, notes, updated_notes
-        )
-        if renamed_files:
-            self.dispatch("rename_files", renamed_files)
-        self._protected_files.clear()
 
     @require_state(State.InitialSync, State.Running)
     def event_refresh(self, force: bool = False) -> None:
@@ -431,6 +409,10 @@ class GkeepPlugin:
     @unwrap_args
     @require_state(State.Running)
     def _maybe_sync(self, bufnr_str: str) -> None:
+        """Called when saving a buffer
+
+        Detects if note buffer and, if so, parses & syncs the note
+        """
         if not self._config.sync_dir:
             return
         bufnr = self._vim.buffers[int(bufnr_str)]
@@ -549,12 +531,18 @@ class GkeepPlugin:
         # I tried doing this logic in python, but any combination of bufadd(),
         # bufload(), :edit, or anything else caused a segfault as soon as I tried to
         # delete the old buffer. I found that using :saveas works, but I can only do
-        # that in lua because it has nvim_buf_call.
+        # that in lua because it requires nvim_buf_call.
         self._vim.exec_lua("require('gkeep').rename_buffers(...)", open_buffers)
         for _, src, __ in open_buffers:
             if os.path.exists(src):
                 logger.info("Deleting %s", src)
                 os.unlink(src)
+
+    def _reset_all_state(self) -> None:
+        self._config.state = State.Uninitialized
+        self._config.delete_state()
+        self._api.logout()
+        self._menu.refresh(True)
 
     @require_state(State.Running, log=True)
     def cmd_logout(self) -> None:
@@ -563,30 +551,26 @@ class GkeepPlugin:
         if email is not None:
             keyring.delete_password("google-keep-token", email)
             self._config.email = None
-        self._config.state = State.Uninitialized
-        self._config.delete_state()
-        self._api.logout()
-        self._menu.refresh(True)
+        self._reset_all_state()
 
     @require_state(State.Uninitialized, State.Running)
     def cmd_login(self, email: str = None, password: str = None) -> None:
-        if email is None:
-            last_email = self._config.email
-            if last_email is not None:
-                email = last_email
-        show = partial(
+        prompt = partial(
             self._modal.prompt.show, relative="editor", width=60, align=Align.SW
         )
         if email is None:
-            return show(
+            return prompt(
                 self.cmd_login, prompt=self._config.get_icon("email") + "Email: "
             )
+        self._config.email = email
+        if self._config.state == State.Running:
+            self._reset_all_state()
 
         token = keyring.get_password("google-keep-token", email)
         if token:
             self._resume(email, token, self._config.load_state())
         elif password is None:
-            return show(
+            return prompt(
                 partial(self.cmd_login, email),
                 prompt=self._config.get_icon("lock"),
                 secret=True,
@@ -597,7 +581,6 @@ class GkeepPlugin:
             assert token is not None
             keyring.set_password("google-keep-token", email, token)
             self._resume(email, token, None)
-        self._config.email = email
         self._vim.out_write(f"Gkeep logged in {email}\n")
 
     @require_state(inv=[State.ShuttingDown])
