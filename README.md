@@ -96,7 +96,7 @@ logout`.
 Command          | Args                              | Description
 ---              | ---                               | ---
 `:Gkeep login`   | [`{email}`]                       | Login to Google Keep
-`:Gkeep logout`  |                                   | Log out and clear state
+`:Gkeep logout`  |                                   | Log out and clear stored credentials
 `:Gkeep open`    | [`right`/`left`]                  | Open the gkeep windows
 `:Gkeep enter`   | [`menu`/`list`], [`right`/`left`] | Open and enter the gkeep windows
 `:Gkeep close`   |                                   | Close the gkeep windows
@@ -114,14 +114,14 @@ statusline if desired.
 ## Configuration
 Set the following global variables to configure gkeep.
 
-Variable                | Type   | Default                                                                                 | Description
----                     | ---    | ---                                                                                     | ---
-`g:gkeep_sync_dir`      | string | `null`                                                                                  | The directory to sync notes into (see [file sync](#file-sync) below)
-`g:gkeep_sync_archived` | bool   | `false`                                                                                 | If `true`, will sync archived notes as well
-`g:gkeep_nerd_font`     | bool   | `true`                                                                                  | When `true`, will use icons from
-`g:gkeep_icons`         | dict   | See [config.py](https://github.com/stevearc/gkeep.nvim/rplugin/python3/gkeep/config.py) | Override the icons used
-`g:gkeep_width`         | int    | 32                                                                                      | Set the width of the sidebar
-`g:gkeep_log_levels`    | dict   | `{'gkeep': 'warning', 'gkeepapi': 'warning'}` | Python log levels. See [logging levels](https://docs.python.org/3/library/logging.html#levels) for a list of levels
+Variable                | Type   | Default                                                                                                 | Description
+---                     | ---    | ---                                                                                                     | ---
+`g:gkeep_sync_dir`      | string | `null`                                                                                                  | The directory to sync notes into (see [file sync](#file-sync) below)
+`g:gkeep_sync_archived` | bool   | `false`                                                                                                 | If `true`, will sync archived notes as well
+`g:gkeep_nerd_font`     | bool   | `true`                                                                                                  | When `true`, will use icons from your [patched font](https://www.nerdfonts.com/)
+`g:gkeep_icons`         | dict   | See [config.py](https://github.com/stevearc/gkeep.nvim/blob/master/rplugin/python3/gkeep/config.py#L26) | Override the icons used
+`g:gkeep_width`         | int    | 32                                                                                                      | Set the width of the sidebar
+`g:gkeep_log_levels`    | dict   | `{'gkeep': 'warning', 'gkeepapi': 'warning'}`                                                           | Python log levels. See [logging levels](https://docs.python.org/3/library/logging.html#levels) for a list of levels
 
 Note that these variables must be set *before* gkeep is loaded in order for them
 to take effect.
@@ -266,14 +266,12 @@ Some more query examples:
     including archived notes
 * `code outline l:software,vim c:red` - Search red notes with either a
     `software` or `vim` label that contain the text "code outline"
-* `code outline l:software,vim c:red` - Search red notes with either a
-    `software` or `vim` label that contain the text "code outline"
 
 ### Ephemeral notes
 
 The default operation for gkeep is to *not* save your files to disk. The note
 data will be cached locally in a json file (under neovim's cache directory), but
-no note files will exist directly. Notes are are accessed by using a buffer name
+no note files will exist directly. Notes are accessed by using a buffer name
 that looks like `gkeep://{id}/{title}.keep`. These buffers can be edited and
 saved like a normal file, and they will sync those changes to Google Keep.
 
@@ -300,7 +298,7 @@ conflict and then delete the `.local` file to get back to a good state.
 #### Changing files outside of vim
 
 You can make edits to the synced note files outside of vim, and the changes will
-be picked up and synced the next time you open vim (and start Gkeep). To protect
+be picked up and synced the next time you open vim (and start gkeep). To protect
 you from data loss, when gkeep detects changes that are made from outside of
 vim, a backup of the note will be made in Google Keep before uploading those
 changes. Backups will appear in your Trash (and thus will be deleted after 7
