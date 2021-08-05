@@ -242,9 +242,8 @@ class NoteList(View):
 
     def _preview_note(self, note: NoteType) -> None:
         url = NoteUrl.from_note(note)
-        self._vim.command(
-            f"botright vertical pedit {url.bufname(self._api, self._config, note)}"
-        )
+        bufname = url.bufname(self._api, self._config, note)
+        self._vim.command(f"botright vertical pedit {bufname}")
         self._update_highlight()
 
     def _edit_note(self, note: NoteType, action: str) -> None:

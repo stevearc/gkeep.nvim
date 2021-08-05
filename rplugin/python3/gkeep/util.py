@@ -82,9 +82,9 @@ class NoteUrl:
     ) -> str:
         from gkeep import parser
 
-        return (
-            f"gkeep://{self.id or ''}/{self.title or ''}.{parser.get_ext(config, note)}"
-        )
+        title = normalize_title(self.title or "")
+
+        return f"gkeep://{self.id or ''}/{title or ''}.{parser.get_ext(config, note)}"
 
     def __str__(self) -> str:
         return f"gkeep://{self.id or ''}/{self.title or ''}"
@@ -141,4 +141,10 @@ def get_link(note: TopLevelNode) -> str:
 
 def escape(title: str) -> str:
     normalized = unicodedata.normalize("NFKC", title)
+    # Replace all whitespace with a space character
+    normalized = re.sub(r"\s", " ", normalized)
     return re.sub(r"[^\w\s\.-]", "", normalized)
+
+
+def normalize_title(title: str) -> str:
+    return re.sub(r"\s", " ", title)
