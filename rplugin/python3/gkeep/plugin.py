@@ -371,7 +371,7 @@ class GkeepPlugin:
         bufnr.options["undolevels"] = level
 
         self._vim.command(f"silent doau BufReadPost {url}")
-        ext = os.path.splitext(bufnr.name)[1][1:]
+        ext = util.get_ext(bufnr.name)[1:]
         self._vim.exec_lua("require('gkeep').on_ephemeral_buf_read(...)", ext)
 
     @pynvim.autocmd("BufWriteCmd", "gkeep://*", eval='expand("<abuf>")', sync=True)

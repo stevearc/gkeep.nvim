@@ -2,6 +2,7 @@ import logging
 import os
 import typing as t
 
+from gkeep import util
 from gkeep.api import KeepApi
 from gkeep.config import KEEP_FT, Config
 from gkeep.parser import keep, neorg
@@ -117,7 +118,7 @@ def url_from_file(
 
 
 def write_file_metadata(filename: str, id: str, title: str, file: TFile = None) -> None:
-    ext = os.path.splitext(filename)[1].lower()
+    ext = util.get_ext(filename)
     if ext == ".norg":
         neorg.write_file_meta(filename, id, title, file)
     else:
@@ -125,7 +126,7 @@ def write_file_metadata(filename: str, id: str, title: str, file: TFile = None) 
 
 
 def write_buffer_metadata(buffer: Buffer, id: str, title: str) -> None:
-    ext = os.path.splitext(buffer.name)[1].lower()
+    ext = util.get_ext(buffer.name)
     if ext == ".norg":
         neorg.write_buffer_meta(buffer, id, title)
     else:

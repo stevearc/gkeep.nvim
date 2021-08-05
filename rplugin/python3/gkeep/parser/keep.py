@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 import typing as t
 
@@ -20,7 +19,7 @@ __all__ = ["serialize", "parse", "detect_note_type", "toggle_list_item"]
 
 
 def detect_note_type(filename: str, file: TFile) -> NoteEnum:
-    ext = os.path.splitext(filename)[1]
+    ext = util.get_ext(filename)
     if ext != ".keep":
         return NoteEnum.NOTE
     lines = read_lines(file, 8)

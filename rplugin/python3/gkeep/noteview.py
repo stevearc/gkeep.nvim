@@ -1,5 +1,4 @@
 import logging
-import os
 
 import gkeep.api
 import gkeep.config
@@ -22,7 +21,7 @@ class NoteView:
             bufnr[:] = []
             return
         url.title = note.title
-        ext = os.path.splitext(bufnr.name)[1]
+        ext = util.get_ext(bufnr.name)
         bufnr.options["filetype"] = self._config.ft_from_ext(ext)
         bufnr[:] = list(parser.serialize(self._config, note))
         bufnr.options["modified"] = False

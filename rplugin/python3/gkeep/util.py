@@ -148,3 +148,13 @@ def escape(title: str) -> str:
 
 def normalize_title(title: str) -> str:
     return re.sub(r"\s", " ", title)
+
+
+def get_ext(filename: str) -> str:
+    name, ext = os.path.splitext(filename)
+    # Handle the case of an empty title
+    if not ext:
+        basename = os.path.basename(filename)
+        if basename.startswith("."):
+            ext = basename
+    return ext.lower()

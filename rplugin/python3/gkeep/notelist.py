@@ -229,7 +229,7 @@ class NoteList(View):
         if enter:
             local_file = self._get_local_changed_file(note)
             if local_file is not None:
-                ext = os.path.splitext(self._vim.current.buffer.name)[1]
+                ext = util.get_ext(self._vim.current.buffer.name)
                 filetype = self._config.ft_from_ext(ext)
                 prefix = ""
                 # If diffopt is the default value, assume that the user wants a vertical split
