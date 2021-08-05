@@ -156,9 +156,16 @@ class GkeepPlugin:
     @pynvim.function("_gkeep_health", sync=True)
     @unwrap_args
     def health_report(self) -> t.Dict[str, t.Any]:
+        email = self._api.get_email()
+        # censor email because we're going to ask people to paste :checkhealth output in
+        # github issues
+        if email is not None:
+            pieces = email.split("@")
+            pieces[0] = pieces[0][:3] + "*" * (len(pieces[0]) - 3)
+            email = "@".join(pieces)
         return {
             "logged_in": self._api.is_logged_in,
-            "email": self._api.get_email(),
+            "email": email,
             "support_neorg": self._config.support_neorg,
             "sync_dir": self._config.sync_dir,
         }
