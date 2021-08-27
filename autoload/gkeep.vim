@@ -2,7 +2,7 @@ function! gkeep#preload(...) abort
   if !exists('g:loaded_remote_plugins')
     runtime! plugin/rplugin.vim
   endif
-  if exists(':Gkeep')
+  if exists(':GkeepLogin')
     call _gkeep_preload()
   endif
 endfunction

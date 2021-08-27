@@ -24,7 +24,7 @@ function! health#gkeep#check()
     call health#report_ok("keyring installed")
   endif
 
-  if exists(':Gkeep') != 2
+  if exists(':GkeepLogin') != 2
     call health#report_error('Remote plugin not found', 'Try running :UpdateRemotePlugins and restart')
     return
   endif
@@ -34,7 +34,7 @@ function! health#gkeep#check()
   if health.logged_in
     call health#report_ok('Logged in as ' . health.email)
   else
-    call health#report_warn('Not logged in', 'Try :Gkeep login')
+    call health#report_warn('Not logged in', 'Try :GkeepLogin')
   endif
 
   if !empty(health.sync_dir)

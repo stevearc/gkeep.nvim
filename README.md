@@ -82,30 +82,30 @@ Run `:checkhealth gkeep` to confirm everything is set up properly
 
 ## Setup
 
-No configuration is necessary to get started, simply run `:Gkeep login`. It will
+No configuration is necessary to get started, simply run `:GkeepLogin`. It will
 prompt you for an email and password (if you use 2-factor, you will need to
 provide an [app password](https://support.google.com/accounts/answer/185833)).
 
 The API master token is stored using
 [keyring](https://github.com/jaraco/keyring) so you don't have to enter your
-password again. To remove the stored credentials from your system, run `:Gkeep
-logout`.
+password again. To remove the stored credentials from your system, run
+`:GkeepLogout`.
 
 ## Commands
 
-Command          | Args                              | Description
----              | ---                               | ---
-`:Gkeep login`   | [`{email}`]                       | Login to Google Keep
-`:Gkeep logout`  |                                   | Log out and clear stored credentials
-`:Gkeep open`    | [`right`/`left`]                  | Open the gkeep windows
-`:Gkeep enter`   | [`menu`/`list`], [`right`/`left`] | Open and enter the gkeep windows
-`:Gkeep close`   |                                   | Close the gkeep windows
-`:Gkeep toggle`  | [`right`/`left`]                  | Open or close the gkeep windows
-`:Gkeep refresh` |                                   | Force fetch latest notes from server
-`:Gkeep goto`    |                                   | Open the note link under the cursor (see [links](#links))
-`:Gkeep browse`  |                                   | Open the note in your web browser
-`:Gkeep yank`    |                                   | Copy a document link to the current note (see [links](#links))
-`:Gkeep check`   |                                   | Toggle the checkbox of the current item (see [list notes](#lists))
+Command         | Args                              | Description
+---             | ---                               | ---
+`:GkeepLogin`   | [`{email}`]                       | Login to Google Keep
+`:GkeepLogout`  |                                   | Log out and clear stored credentials
+`:GkeepOpen`    | [`right`/`left`]                  | Open the gkeep windows
+`:GkeepEnter`   | [`menu`/`list`], [`right`/`left`] | Open and enter the gkeep windows
+`:GkeepClose`   |                                   | Close the gkeep windows
+`:GkeepToggle`  | [`right`/`left`]                  | Open or close the gkeep windows
+`:GkeepRefresh` |                                   | Force fetch latest notes from server
+`:GkeepGoto`    |                                   | Open the note link under the cursor (see [links](#links))
+`:GkeepBrowse`  |                                   | Open the note in your web browser
+`:GkeepYank`    |                                   | Copy a document link to the current note (see [links](#links))
+`:GkeepCheck`   |                                   | Toggle the checkbox of the current item (see [list notes](#lists))
 
 Additionally, there is the function `GkeepStatus()` which returns the current
 status message (usually about syncing notes). This can be used in your
@@ -174,15 +174,15 @@ rename the note. Changing the note title *will* rename the file.
 #### Lists
 Google Keep has a special type of note to represent lists, and gkeep customizes
 the editing environment heavily to enforce the proper format. You may wish to
-bind `:Gkeep check` to a convenient keymap.
+bind `:GkeepCheck` to a convenient keymap.
 
 https://user-images.githubusercontent.com/506791/127721475-6bf500ac-e5e6-49b4-9886-1ece02cfead8.mp4
 
 ### Links
 You can embed links to other notes within a note. The format for a link is
 `[visible text](note_id)`. You can quickly get a link to a note using the
-`:Gkeep yank` command. To jump to a link under your cursor, use the `:Gkeep
-goto` command (bound to `gf` by default).
+`:GkeepYank` command. To jump to a link under your cursor, use the `:GkeepGoto`
+command (bound to `gf` by default).
 
 You can also use the [ephemeral url](#ephemeral-notes) format for links if you
 like (e.g. `gkeep://{id}/{visible_text}`)

@@ -12,7 +12,7 @@ setlocal formatoptions+=orj
 inoremap <expr> <buffer> <Tab> gkeep#editor#TabOrIndent()
 inoremap <expr> <buffer> <Backspace> gkeep#editor#BackspaceOrDedent()
 inoremap <expr> <buffer> * gkeep#editor#Bullet()
-nnoremap gf <cmd>Gkeep goto<CR>
+nnoremap gf <cmd>GkeepGoto<CR>
 
 set omnifunc=_gkeep_omnifunc
 

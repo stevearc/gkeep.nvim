@@ -142,17 +142,6 @@ class GkeepPlugin:
             time.sleep(10)
             self.dispatch("sync")
 
-    @pynvim.command(
-        "Gkeep", nargs="*", complete="customlist,_gkeep_command_complete", sync=True
-    )
-    @unwrap_args
-    def keep_command(self, cmd: str = "login", *args: t.Any) -> None:
-        meth = f"cmd_{cmd}"
-        if hasattr(self, meth):
-            getattr(self, meth)(*args)
-        else:
-            util.echoerr(self._vim, f"Unknown Gkeep command '{cmd}'")
-
     @pynvim.function("_gkeep_health", sync=True)
     @unwrap_args
     def health_report(self) -> t.Dict[str, t.Any]:
@@ -176,18 +165,12 @@ class GkeepPlugin:
         st = get_status()
         return "" if st is None else st
 
-    @pynvim.function("_gkeep_command_complete", sync=True)
+    @pynvim.function("_gkeep_complete_position", sync=True)
     @unwrap_args
-    def keep_command_complete(
+    def _gkeep_complete_position(
         self, arg_lead: str, _line: str, _cursor_pos: int
     ) -> t.List[str]:
-        ret = []
-        for name, _ in inspect.getmembers(self, predicate=inspect.ismethod):
-            if name.startswith("cmd_"):
-                cmd = name[4:]
-                if cmd.startswith(arg_lead):
-                    ret.append(cmd)
-        return ret
+        return _complete_arg_list(arg_lead, [p.value for p in Position])
 
     @pynvim.function("_gkeep_preload")
     @unwrap_args
@@ -259,7 +242,7 @@ class GkeepPlugin:
     def event_handle_sync_error(self, error: str) -> None:
         logger.error("Got error during sync: %s\n  deactivating gkeep!", error)
         util.echoerr(
-            self._vim, "Google Keep sync error. Use :Gkeep login to re-initialize"
+            self._vim, "Google Keep sync error. Use :GkeepLogin to re-initialize"
         )
         self._reset_all_state()
 
@@ -551,7 +534,9 @@ class GkeepPlugin:
         self._api.logout()
         self._menu.refresh(True)
 
+    @pynvim.command("GkeepLogout", sync=True)
     @require_state(State.Running, log=True)
+    @unwrap_args
     def cmd_logout(self) -> None:
         logger.debug("Logging out")
         email = self._config.email
@@ -560,7 +545,9 @@ class GkeepPlugin:
             self._config.email = None
         self._reset_all_state()
 
+    @pynvim.command("GkeepLogin", nargs="*", sync=True)
     @require_state(State.Uninitialized, State.Running)
+    @unwrap_args
     def cmd_login(self, email: str = None, password: str = None) -> None:
         prompt = partial(
             self._modal.prompt.show, relative="editor", width=60, align=Align.SW
@@ -590,7 +577,11 @@ class GkeepPlugin:
             self._resume(email, token, None)
         self._vim.out_write(f"Gkeep logged in {email}\n")
 
+    @pynvim.command(
+        "GkeepEnter", nargs="*", complete="customlist,_gkeep_complete_enter", sync=True
+    )
     @require_state(inv=[State.ShuttingDown])
+    @unwrap_args
     def cmd_enter(
         self, target: str = "menu", position: Position = Position.LEFT
     ) -> None:
@@ -605,7 +596,18 @@ class GkeepPlugin:
         else:
             util.echoerr(self._vim, f"Unknown target '{target}'")
 
+    @pynvim.function("_gkeep_complete_enter", sync=True)
+    @unwrap_args
+    def _gkeep_complete_enter(
+        self, arg_lead: str, line: str, cursor_pos: int
+    ) -> t.List[str]:
+        return _complete_multi_arg_list(
+            arg_lead, line, cursor_pos, ["menu", "list"], [p.value for p in Position]
+        )
+
+    @pynvim.command("GkeepGoto", sync=True)
     @require_state(State.Running)
+    @unwrap_args
     def cmd_goto(self) -> None:
         lnum, col = self._vim.current.window.cursor
         line = self._vim.current.buffer[lnum - 1]
@@ -629,7 +631,9 @@ class GkeepPlugin:
                 return self._api.get(url.id)
         return None
 
+    @pynvim.command("GkeepBrowse", sync=True)
     @require_state(State.InitialSync, State.Running)
+    @unwrap_args
     def cmd_browse(self) -> None:
         note = self._get_current_note()
         if note is None:
@@ -654,7 +658,9 @@ class GkeepPlugin:
         else:
             subprocess.call([cmd, link])
 
+    @pynvim.command("GkeepYank", sync=True)
     @require_state(State.InitialSync, State.Running)
+    @unwrap_args
     def cmd_yank(self) -> None:
         note = self._get_current_note()
         if note is None:
@@ -692,23 +698,47 @@ class GkeepPlugin:
         url = NoteUrl.from_ephemeral_bufname(line[link_start:])
         return url.id
 
+    @pynvim.command(
+        "GkeepOpen",
+        nargs="?",
+        complete="customlist,_gkeep_complete_position",
+        sync=True,
+    )
     @require_state(inv=[State.ShuttingDown])
+    @unwrap_args
     def cmd_open(self, position: Position = Position.LEFT) -> None:
         position = Position(position)
         self.preload()
         self._menu.open(False, position)
 
+    @pynvim.command(
+        "GkeepToggle",
+        nargs="?",
+        complete="customlist,_gkeep_complete_position",
+        sync=True,
+    )
     @require_state(inv=[State.ShuttingDown])
+    @unwrap_args
     def cmd_toggle(self, position: Position = Position.LEFT) -> None:
         position = Position(position)
         self.preload()
         self._menu.toggle(False, position)
 
+    @pynvim.command("GkeepClose", sync=True)
     @require_state(inv=[State.ShuttingDown])
+    @unwrap_args
     def cmd_close(self) -> None:
         self._menu.close()
 
+    @pynvim.command("GkeepSync", sync=True)
     @require_state(State.Running, log=True)
+    @unwrap_args
+    def cmd_sync(self) -> None:
+        self.event_sync(resync=False, force=True)
+
+    @pynvim.command("GkeepRefresh", sync=True)
+    @require_state(State.Running, log=True)
+    @unwrap_args
     def cmd_refresh(self) -> None:
         if self._api.is_dirty:
             return self._modal.confirm.show(
@@ -718,8 +748,10 @@ class GkeepPlugin:
                 else None,
                 initial_value=ConfirmResult.NO,
             )
-        self.event_sync(True)
+        self.event_sync(resync=True)
 
+    @pynvim.command("GkeepCheck", sync=True)
+    @unwrap_args
     def cmd_check(self) -> None:
         bufnr = self._vim.current.buffer
         url = parser.url_from_file(self._config, bufnr.name, bufnr)
@@ -730,3 +762,32 @@ class GkeepPlugin:
             return
 
         self._vim.current.line = keep.toggle_list_item(self._vim.current.line)
+
+
+def _complete_arg_list(arg_lead: str, options: t.Iterable[str]) -> t.List[str]:
+    return [opt for opt in options if opt.lower().startswith(arg_lead.lower())]
+
+
+def _get_arg_index(line: str, cursor_pos: int) -> int:
+    """Return which argument the cursor is currently on"""
+    arg_idx = -1
+    i = 0
+    while i < cursor_pos:
+        if line[i] == " ":
+            arg_idx += 1
+            # Multiple spaces are treated as a single delimiter
+            while i < cursor_pos and line[i] == " ":
+                i += 1
+            continue
+        i += 1
+    return arg_idx
+
+
+def _complete_multi_arg_list(
+    arg_lead: str, line: str, cursor_pos: int, *option_lists: t.Iterable[str]
+) -> t.List[str]:
+    arg_idx = _get_arg_index(line, cursor_pos)
+    if arg_idx == -1 or arg_idx >= len(option_lists):
+        return []
+    else:
+        return _complete_arg_list(arg_lead, option_lists[arg_idx])

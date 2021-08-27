@@ -60,11 +60,11 @@ class Menu(View):
             ("n", "E", act("edit"), "Edit search"),
             ("n", "D", act("delete"), "Delete search or label"),
             ("n", "N", act("new_label"), "New label"),
-            ("n", "q", "<cmd>Gkeep close<CR>", "Close Gkeep windows"),
+            ("n", "q", "<cmd>GkeepClose<CR>", "Close Gkeep windows"),
             (
                 "n",
                 "<c-r>",
-                "<cmd>Gkeep refresh<CR>",
+                "<cmd>GkeepRefresh<CR>",
                 "Refresh notes (discarding local changes)",
             ),
             ("n", "?", act("show_help"), "Show help"),
@@ -172,7 +172,7 @@ class Menu(View):
             lines = lines[:num_lines]
         status = self._last_status = gstatus.get_status("right")
         if status is None and not self._api.is_logged_in:
-            status = "Log in with :Gkeep login"
+            status = "Log in with :GkeepLogin"
 
         highlights = []
         if status and lines:
