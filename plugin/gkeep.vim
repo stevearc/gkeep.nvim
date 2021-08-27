@@ -6,6 +6,11 @@ if exists('g:gkeep_sync_dir')
   call gkeep#preload_if_note(bufname('%'))
 endif
 
+aug GkeepSyncOnFocus
+  au!
+  au FocusGained * silent! GkeepSync
+aug END
+
 if &termguicolors || has('gui_running')
   hi def link GKeepWhite Normal
   hi def GKeepRed      guifg=#EC8B83
