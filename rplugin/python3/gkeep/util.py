@@ -125,6 +125,12 @@ class NoteEnum(enum.Enum):
     LIST = "list"
 
 
+class NoteFormat(enum.Enum):
+    NOTE = "note"
+    LIST = "list"
+    NEORG = "neorg"
+
+
 def get_type(note: TopLevelNode) -> NoteEnum:
 
     if note.type == NodeType.Note:

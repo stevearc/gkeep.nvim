@@ -24,7 +24,7 @@ from gkeep.parser import ALLOWED_EXT, keep
 from gkeep.query import Query
 from gkeep.status import get_status
 from gkeep.thread_util import background
-from gkeep.util import NoteUrl, get_type
+from gkeep.util import NoteFormat, NoteUrl, get_type
 from gkeepapi.node import List, TopLevelNode
 
 if sys.version_info < (3, 8):
@@ -131,6 +131,7 @@ class GkeepPlugin:
             self._sync: fssync.ISync = fssync.FileSync(self._api, self._config)
         else:
             self._sync = fssync.NoopSync(self._api)
+        self._start_callbacks: t.List[t.Callable[[], None]] = []
 
     @pynvim.shutdown_hook
     def on_shutdown(self) -> None:
@@ -222,6 +223,7 @@ class GkeepPlugin:
         self.dispatch("rename_files", renames)
         self.dispatch("refresh", True)
         self.dispatch("sync")
+        self.dispatch("on_start")
         self.sync_bg_thread()
 
     @require_state(State.Running)
@@ -285,6 +287,11 @@ class GkeepPlugin:
     @require_state(inv=[State.ShuttingDown])
     def event_render_status(self) -> None:
         self._menu.render_status()
+
+    @require_state(State.Running)
+    def event_on_start(self) -> None:
+        for cb in self._start_callbacks:
+            cb()
 
     @pynvim.function("_gkeep_list_action", sync=True)
     @unwrap_args
@@ -657,6 +664,47 @@ class GkeepPlugin:
             )
         else:
             subprocess.call([cmd, link])
+
+    @pynvim.command(
+        "GkeepNew", nargs="*", complete="customlist,_gkeep_complete_new", sync=True
+    )
+    @require_state(inv=[State.ShuttingDown])
+    @unwrap_args
+    def cmd_new(self, *type_and_name_pieces: str) -> None:
+        if type_and_name_pieces:
+            note_type = NoteFormat(type_and_name_pieces[0])
+            note_name = None
+            if len(type_and_name_pieces) > 1:
+                note_name = " ".join(type_and_name_pieces[1:])
+            new_fn: t.Callable[[], None] = partial(self._new_note, note_type, note_name)
+        else:
+            new_fn = self._new_note
+        if self._config.state == State.Uninitialized:
+            if not self._config.email:
+                util.echoerr(self._vim, "Log in first with :GkeepLogin")
+            else:
+                self.preload()
+                self._start_callbacks.append(new_fn)
+        elif self._config.state == State.Running:
+            new_fn()
+        else:
+            self._start_callbacks.append(new_fn)
+
+    @pynvim.function("_gkeep_complete_new", sync=True)
+    @unwrap_args
+    def _gkeep_complete_new(
+        self, arg_lead: str, line: str, cursor_pos: int
+    ) -> t.List[str]:
+        formats = [NoteFormat.NOTE, NoteFormat.LIST]
+        if self._config.support_neorg:
+            formats.append(NoteFormat.NEORG)
+        return _complete_multi_arg_list(
+            arg_lead, line, cursor_pos, [p.value for p in formats]
+        )
+
+    @require_state(State.Running, log=True)
+    def _new_note(self, type: NoteFormat = None, title: str = None) -> None:
+        self._notelist.new_note(type, title)
 
     @pynvim.command("GkeepYank", sync=True)
     @require_state(State.InitialSync, State.Running)

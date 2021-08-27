@@ -11,7 +11,7 @@ from gkeep import fssync, parser, util
 from gkeep.config import KEEP_FT, Config
 from gkeep.modal import Align, Element, GridLayout, TextAlign
 from gkeep.query import Query
-from gkeep.util import NoteEnum, NoteType, NoteUrl
+from gkeep.util import NoteEnum, NoteFormat, NoteType, NoteUrl
 from gkeep.view import View
 from gkeepapi.node import ColorValue, List, Note
 from pynvim.api import Buffer, Nvim, Window
@@ -47,7 +47,7 @@ class NoteList(View):
             ("nv", "P", act("pin"), "Pin/unpin"),
             ("nv", "A", act("archive"), "Archive/unarchive"),
             ("nv", "D", act("delete"), "Delete/undelete"),
-            ("n", "N", act("new"), "New note"),
+            ("n", "N", "<cmd>GkeepNew<CR>", "New note"),
             ("n", "ct", act("change_type"), "Change note type"),
             ("nv", "cc", act("change_color"), "Change note color"),
             ("n", "J", act("move", ", 1"), "Move note down"),
@@ -94,7 +94,9 @@ class NoteList(View):
         except ValueError:
             pass
         else:
-            self._vim.current.window.cursor = (idx + 1, 0)
+            window = self.get_win()
+            if window is not None:
+                window.cursor = (idx + 1, 0)
 
     def _setup_buffer(self, buffer: Buffer) -> None:
         buffer.options["filetype"] = "GoogleKeepList"
@@ -221,10 +223,14 @@ class NoteList(View):
         return self.notes[idx]
 
     def cmd_select(self, enter: bool = False, action: str = "edit") -> None:
-        startwin = self._vim.current.window
         note = self.get_note_under_cursor()
-        if note is None:
-            return
+        if note is not None:
+            self._open_note(note, enter, action)
+
+    def _open_note(
+        self, note: NoteType, enter: bool = False, action: str = "edit"
+    ) -> None:
+        startwin = self._vim.current.window
         self._edit_note(note, action)
         if enter:
             local_file = self._get_local_changed_file(note)
@@ -276,27 +282,32 @@ class NoteList(View):
             self.rerender_note(note)
         self.dispatch("sync")
 
-    def cmd_new(self) -> None:
-        layout = self._get_note_type_layout()
-        self._modal.confirm.show(
-            "New note",
-            self._new_note_type,
-            text_margin=2,
-            layout=layout,
-        )
+    def new_note(self, note_type: NoteFormat = None, title: str = None) -> None:
+        if note_type is None:
+            layout = self._get_note_type_layout()
+            self._modal.confirm.show(
+                "New note",
+                self._new_note_type,
+                text_margin=2,
+                layout=layout,
+            )
+        elif title is None:
+            self._new_note_type(note_type)
+        else:
+            self._new_note(note_type, title)
 
-    def _new_note_type(self, new_type: t.Tuple[NoteEnum, str]) -> None:
-        note_type, filetype = new_type
-        icon = self._config.get_icon(note_type.value)
+    def _new_note_type(self, new_type: NoteFormat) -> None:
+        icon = self._config.get_icon(new_type.value)
         self._modal.prompt.show(
-            partial(self._new_note, note_type, filetype),
+            partial(self._new_note, new_type),
             prompt=icon,
             relative="editor",
             align=Align.CENTER,
             width=60,
         )
 
-    def _new_note(self, type: NoteEnum, filetype: str, title: str) -> None:
+    def _new_note(self, note_type: NoteFormat, title: str) -> None:
+        type, filetype = _split_type_and_format(note_type)
         if type == NoteEnum.NOTE:
             note = self._api.createNote(title)
         elif type == NoteEnum.LIST:
@@ -326,7 +337,7 @@ class NoteList(View):
                 for line in parser.serialize(self._config, note, filetype):
                     ofile.write(line)
                     ofile.write("\n")
-        self.cmd_select(True)
+        self._open_note(note, True)
         self._noteview.render(self._vim.current.buffer, url)
 
     def cmd_move(self, steps: t.Union[int, str]) -> None:
@@ -367,16 +378,14 @@ class NoteList(View):
         self.render()
         self._vim.current.window.cursor = (newidx + 1, 0)
 
-    def _get_note_type_layout(self) -> GridLayout[t.Tuple[NoteEnum, str]]:
+    def _get_note_type_layout(self) -> GridLayout[NoteFormat]:
         elements = [
-            Element((NoteEnum.NOTE, KEEP_FT), self._config.get_icon("note") + "Note"),
-            Element((NoteEnum.LIST, KEEP_FT), self._config.get_icon("list") + "List"),
+            Element(NoteFormat.NOTE, self._config.get_icon("note") + "Note"),
+            Element(NoteFormat.LIST, self._config.get_icon("list") + "List"),
         ]
         if self._config.support_neorg:
             elements.append(
-                Element(
-                    (NoteEnum.NOTE, "norg"), self._config.get_icon("note") + "Neorg"
-                )
+                Element(NoteFormat.NEORG, self._config.get_icon("note") + "Neorg")
             )
         return GridLayout(
             self._vim,
@@ -548,3 +557,14 @@ class NoteList(View):
         line = util.get_link(note)
         self._vim.funcs.setreg("+", line)
         self._vim.funcs.setreg("", line)
+
+
+def _split_type_and_format(note_type: NoteFormat) -> t.Tuple[NoteEnum, str]:
+    if note_type == NoteFormat.NOTE:
+        return (NoteEnum.NOTE, KEEP_FT)
+    elif note_type == NoteFormat.LIST:
+        return (NoteEnum.LIST, KEEP_FT)
+    elif note_type == NoteFormat.NEORG:
+        return (NoteEnum.NOTE, "norg")
+    else:
+        raise ValueError(f"Invalid note type {note_type}")
