@@ -25,8 +25,7 @@ class NoteView:
         bufnr.options["filetype"] = self._config.ft_from_ext(ext)
         bufnr[:] = list(parser.serialize(self._config, note))
         bufnr.options["modified"] = False
-        nt = get_type(note)
-        bufnr.vars["note_type"] = nt.value
+        util.set_note_opts_and_vars(note, bufnr)
 
     def rerender_note(self, id: str) -> None:
         for bufnr in self._vim.buffers:

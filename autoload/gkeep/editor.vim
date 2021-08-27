@@ -10,10 +10,10 @@ endfunction
 
 function! gkeep#editor#TabOrIndent() abort
   if s:AtListItemStart()
-    if indent('.') < 4 || b:note_type == 'note'
+    if indent('.') < &l:shiftwidth || b:note_type == 'note'
       " Start with a space/backspace because otherwise the EOL space generated
       " after creating a new line will get removed when we leave insert mode
-      return "\<space>\<backspace>\<C-o>>>" . repeat("\<right>", 4)
+      return "\<space>\<backspace>\<C-o>>>" . repeat("\<right>", &l:shiftwidth)
     else
       return ''
     endif
@@ -24,15 +24,15 @@ endfunction
 function! gkeep#editor#BackspaceOrDedent() abort
   if s:AtListItemStart()
     let indent = indent('.')
-    if indent >= 4
+    if indent >= &l:shiftwidth
       let col = getcurpos()[2]
-      call cursor(0, col - 4)
+      call cursor(0, col - &l:shiftwidth)
       " Start with a space/backspace because otherwise the EOL space generated
       " after creating a new line will get removed when we leave insert mode
       let line = getline('.')
       let sufflen = len(line) - col + 1
-      if sufflen > 4
-        let sufflen = 4
+      if sufflen > &l:shiftwidth
+        let sufflen = &l:shiftwidth
       endif
       return "\<space>\<backspace>\<C-o><<" . repeat("\<left>", sufflen)
     elseif b:note_type == 'note'
@@ -40,7 +40,7 @@ function! gkeep#editor#BackspaceOrDedent() abort
     else
       let line = getline('.')
       " If there is no text after the cursor, delete the list item
-      if len(line) == 4
+      if len(line) == &l:shiftwidth
         let lnum = getcurpos()[1]
         if lnum == nvim_buf_line_count(0)
           return "\<C-o>dd\<C-o>$"
@@ -86,7 +86,7 @@ function! gkeep#editor#InsertCheckbox()
 
   if match(line, '^\s*\[.\] ') != 0
     let spacing = indent('.')
-    let norm_spacing = (spacing / 4) * 4
+    let norm_spacing = (spacing / &l:shiftwidth) * &l:shiftwidth
     let col = getcurpos()[2]
     if spacing > 0
       let line = line[spacing:]
@@ -97,7 +97,7 @@ function! gkeep#editor#InsertCheckbox()
       let line = line[m:]
     endif
     call setline('.', repeat(' ', norm_spacing) . '[ ] ' . line)
-    call cursor(0, col + 4)
+    call cursor(0, col + &l:shiftwidth)
   endif
 endfunction
 

@@ -1,5 +1,5 @@
 set syntax=keep
-setlocal shiftwidth=4 expandtab foldmethod=expr foldexpr=gkeep#foldexpr()
+setlocal expandtab foldmethod=expr foldexpr=gkeep#foldexpr()
 set comments=b:*,b:-,b:+,b:•
 setlocal autoindent
 set conceallevel=2

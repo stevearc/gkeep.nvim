@@ -443,8 +443,7 @@ class GkeepPlugin:
         if url is not None:
             note = self._api.get(url.id)
             if note is not None:
-                nt = get_type(note)
-                bufnr.vars["note_type"] = nt.value
+                util.set_note_opts_and_vars(note, bufnr)
 
     @pynvim.function("_gkeep_search", sync=True)
     @unwrap_args

@@ -8,8 +8,9 @@ import unicodedata
 from typing import TYPE_CHECKING
 
 import pynvim
-from gkeep.config import Config, State
+from gkeep.config import KEEP_FT, Config, State
 from gkeepapi.node import List, NodeType, Note, TopLevelNode
+from pynvim.api import Buffer
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal
@@ -164,3 +165,11 @@ def get_ext(filename: str) -> str:
         if basename.startswith("."):
             ext = basename
     return ext.lower()
+
+
+def set_note_opts_and_vars(note: NoteType, bufnr: Buffer) -> None:
+    nt = get_type(note)
+    bufnr.vars["note_type"] = nt.value
+    if bufnr.options["filetype"] == KEEP_FT:
+        shiftwidth = 2 if nt == NoteEnum.NOTE else 4
+        bufnr.options["shiftwidth"] = shiftwidth
