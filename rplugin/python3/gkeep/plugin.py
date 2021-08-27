@@ -266,6 +266,14 @@ class GkeepPlugin:
             note = self._api.get(id)
             if note is not None:
                 notes.append(fssync.NoteFile.from_note(self._api, self._config, note))
+
+        # Only rerender the ephemeral buffers. Note files are updated directly.
+        for bufnr in self._vim.buffers:
+            bufname = bufnr.name
+            if NoteUrl.is_ephemeral(bufname):
+                url = NoteUrl.from_ephemeral_bufname(bufname)
+                if url.id in updated_notes and not bufnr.options["modified"]:
+                    self._noteview.render(bufnr, url)
         self._write_files(notes)
 
     @background
