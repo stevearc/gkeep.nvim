@@ -3,7 +3,7 @@ import logging
 import gkeep.api
 import gkeep.config
 from gkeep import parser, util
-from gkeep.util import NoteUrl, get_type
+from gkeep.util import NoteUrl
 from pynvim.api import Buffer, Nvim
 
 logger = logging.getLogger(__name__)

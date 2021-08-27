@@ -1,4 +1,3 @@
-import inspect
 import logging
 import logging.handlers
 import os
@@ -24,7 +23,7 @@ from gkeep.parser import ALLOWED_EXT, keep
 from gkeep.query import Query
 from gkeep.status import get_status
 from gkeep.thread_util import background
-from gkeep.util import NoteFormat, NoteUrl, get_type
+from gkeep.util import NoteFormat, NoteUrl
 from gkeepapi.node import List, TopLevelNode
 
 if sys.version_info < (3, 8):
