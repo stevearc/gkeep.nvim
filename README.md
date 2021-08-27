@@ -102,6 +102,7 @@ Command         | Args                              | Description
 `:GkeepClose`   |                                   | Close the gkeep windows
 `:GkeepToggle`  | [`right`/`left`]                  | Open or close the gkeep windows
 `:GkeepNew`     | [`note`/`list`/`neorg`], [title]  | Create a new note
+`:GkeepSync`    |                                   | Sync changes with the server
 `:GkeepRefresh` |                                   | Force fetch latest notes from server
 `:GkeepGoto`    |                                   | Open the note link under the cursor (see [links](#links))
 `:GkeepBrowse`  |                                   | Open the note in your web browser
