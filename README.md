@@ -36,7 +36,7 @@ gkeep supports all the usual plugin managers
   <summary>Packer</summary>
 
   ```lua
-  return require('packer').startup(function()
+  require('packer').startup(function()
       use {'stevearc/gkeep.nvim', run = ':UpdateRemotePlugins'}
   end)
   ```
@@ -47,7 +47,7 @@ gkeep supports all the usual plugin managers
 
   ```lua
   require "paq" {
-      {'stevearc/gkeep.nvim', run = function() vim.cmd('UpdateRemotePlugins') end}
+      {'stevearc/gkeep.nvim', run = vim.fn['remote#host#UpdateRemotePlugins']};
   }
   ```
 </details>
@@ -61,10 +61,27 @@ gkeep supports all the usual plugin managers
 </details>
 
 <details>
+  <summary>dein</summary>
+
+  ```vim
+  call dein#add('stevearc/gkeep.nvim')
+  ```
+</details>
+
+<details>
   <summary>Pathogen</summary>
 
   ```sh
-  git clone https://github.com/stevearc/gkeep.nvim.git ~/.vim/bundle/
+  git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git ~/.vim/bundle/
+  ```
+</details>
+
+<details>
+  <summary>Neovim native package</summary>
+
+  ```sh
+  git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git \
+    "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/pack/gkeep/start/gkeep.nvim
   ```
 </details>
 
