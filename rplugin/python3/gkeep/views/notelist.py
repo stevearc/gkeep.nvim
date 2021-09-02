@@ -1,18 +1,23 @@
 import logging
-import os
 import random
 import typing as t
 from functools import partial
 
 import gkeep.api
 import gkeep.modal
-import gkeep.noteview
-from gkeep import fssync, parser, util
+from gkeep import parser, util
 from gkeep.config import KEEP_FT, Config
 from gkeep.modal import Align, Element, GridLayout, TextAlign
 from gkeep.query import Query
 from gkeep.util import NoteEnum, NoteFormat, NoteType, NoteUrl
-from gkeep.view import View
+from gkeep.views.noteview import NoteView
+from gkeep.views.view import View
+from gkeep.views.view_util import (
+    NoteTypeEditor,
+    get_local_changed_file,
+    render_note_line,
+    render_note_list,
+)
 from gkeepapi.node import ColorValue, List, Note
 from pynvim.api import Buffer, Nvim, Window
 
@@ -26,13 +31,14 @@ class NoteList(View):
         config: Config,
         api: gkeep.api.KeepApi,
         modal: gkeep.modal.Modal,
-        noteview: gkeep.noteview.NoteView,
+        noteview: NoteView,
     ) -> None:
         super().__init__(vim, config, api, modal, "Note list")
         self._noteview = noteview
         self._query = Query()
         self._preferred_item: t.Optional[NoteType] = None
         self._preview_item = None
+        self._note_type_editor = NoteTypeEditor(vim, config, api, modal)
         self.dispatch = partial(util.dispatch, self._vim, self._config)
 
     def _get_shortcuts(self) -> t.List[t.Tuple[str, str, str, str]]:
@@ -117,60 +123,21 @@ class NoteList(View):
         bufnr = self.bufnr
         if bufnr is None:
             return
-        lines = []
-        highlights: t.List[t.Tuple[str, int, int, int]] = []
-        for i, note in enumerate(self.notes):
-            line = self._render_line(i, note, highlights)
-            lines.append(line)
-        if not lines:
-            lines.append("")
+
+        render_note_list(self._vim, self._config, self._api, bufnr, self.notes)
+        if not self.notes:
+            lines = [""]
             if self._api.is_searching(self.query):
                 lines.append("Searching...".center(self._config.width))
             else:
                 lines.append("<No results>".center(self._config.width))
-        bufnr.options["modifiable"] = True
-        bufnr[:] = lines
-        bufnr.options["modifiable"] = False
-        ns = self._vim.api.create_namespace("GkeepNoteListHL")
-        bufnr.update_highlights(ns, highlights, clear=True)
+            bufnr.options["modifiable"] = True
+            bufnr[:] = lines
+            bufnr.options["modifiable"] = False
 
         if self._preferred_item is not None:
             self._select_note(self._preferred_item)
         self._update_highlight()
-
-    def _render_line(
-        self, row: int, note: NoteType, highlights: t.List[t.Tuple[str, int, int, int]]
-    ) -> str:
-        pieces = []
-        col = 0
-        if isinstance(note, List):
-            icon = "list"
-        else:
-            icon = "note"
-        pieces.append(self._config.get_icon(icon))
-        icon_width = self._config.get_icon_width(icon)
-        highlights.append((f"GKeep{note.color.value}", row, col, col + icon_width))
-        col += icon_width
-
-        local_file = self._get_local_changed_file(note)
-        if local_file is not None:
-            pieces.append(self._config.get_icon("diff"))
-            icon_width = self._config.get_icon_width("diff")
-            highlights.append(("Error", row, col, col + icon_width))
-            col += icon_width
-
-        if note.archived:
-            pieces.append(self._config.get_icon("archived"))
-        if note.trashed:
-            pieces.append(self._config.get_icon("trashed"))
-        if note.pinned:
-            pieces.append(self._config.get_icon("pinned"))
-
-        entry = note.title.strip()
-        if not entry:
-            entry = "<No title>"
-        pieces.append(entry)
-        return "".join(pieces).ljust(self._config.width)
 
     def rerender_note(self, note_or_id: t.Union[NoteType, str, None]) -> None:
         if note_or_id is None:
@@ -190,20 +157,12 @@ class NoteList(View):
             return
         row = self.notes.index(note)
         highlights: t.List[t.Tuple[str, int, int, int]] = []
-        line = self._render_line(row, note, highlights)
+        line = render_note_line(self._config, self._api, row, note, highlights)
         bufnr.options["modifiable"] = True
         bufnr[row : row + 1] = [line]
         bufnr.options["modifiable"] = False
         ns = self._vim.api.create_namespace("GkeepNoteListHL")
         bufnr.update_highlights(ns, highlights, clear_start=row, clear_end=row + 1)
-
-    def _get_local_changed_file(self, note: NoteType) -> t.Optional[str]:
-        filepath = NoteUrl.from_note(note).filepath(self._api, self._config, note)
-        if filepath is not None:
-            local = fssync.get_local_file(filepath)
-            if os.path.exists(local):
-                return local
-        return None
 
     def _get_selected_notes(self) -> t.Sequence[NoteType]:
         lstart = self._vim.funcs.line("v")
@@ -233,7 +192,7 @@ class NoteList(View):
         startwin = self._vim.current.window
         self._edit_note(note, action)
         if enter:
-            local_file = self._get_local_changed_file(note)
+            local_file = get_local_changed_file(self._config, self._api, note)
             if local_file is not None:
                 ext = util.get_ext(self._vim.current.buffer.name)
                 filetype = self._config.ft_from_ext(ext)
@@ -284,7 +243,7 @@ class NoteList(View):
 
     def new_note(self, note_type: NoteFormat = None, title: str = None) -> None:
         if note_type is None:
-            layout = self._get_note_type_layout()
+            layout = self._note_type_editor.get_note_type_layout()
             self._modal.confirm.show(
                 "New note",
                 self._new_note_type,
@@ -378,83 +337,16 @@ class NoteList(View):
         self.render()
         self._vim.current.window.cursor = (newidx + 1, 0)
 
-    def _get_note_type_layout(self) -> GridLayout[NoteFormat]:
-        elements = [
-            Element(NoteFormat.NOTE, self._config.get_icon("note") + "Note"),
-            Element(NoteFormat.LIST, self._config.get_icon("list") + "List"),
-        ]
-        if self._config.support_neorg:
-            elements.append(
-                Element(NoteFormat.NEORG, self._config.get_icon("note") + "Neorg")
-            )
-        return GridLayout(
-            self._vim,
-            [elements],
-            align=TextAlign.CENTER,
-        )
-
     def cmd_change_type(self) -> None:
         note = self.get_note_under_cursor()
-        if note is None:
-            return
-        layout = self._get_note_type_layout()
-        initial_value = (util.get_type(note), parser.get_filetype(self._config, note))
-        self._modal.confirm.show(
-            f"Change type of {note.title}",
-            partial(self._change_type, note),
-            text_margin=2,
-            initial_value=initial_value,
-            layout=layout,
-        )
+        if note is not None:
+            self._note_type_editor.change_type(note, self._on_change_type)
 
-    def _change_type(self, note: NoteType, new_type: t.Tuple[NoteEnum, str]) -> None:
-        note_type, filetype = new_type
-        url = NoteUrl.from_note(note)
-        bufname = url.bufname(self._api, self._config, note)
-        old_filetype = parser.get_filetype(self._config, note)
-        if note_type == NoteEnum.NOTE and not isinstance(note, Note):
-            lines = []
-            new_note = Note()
-            for i, item in enumerate(note.items):
-                lines.append(item.text)
-                if i == 0:
-                    new_note.append(item)
-                else:
-                    item.delete()
-            raw = note.save(True)
-            new_note.load(raw)
-            new_note.text = "\n".join(lines)
-            parser.convert(new_note, old_filetype, filetype)
-        elif note_type == NoteEnum.LIST and not isinstance(note, List):
-            parser.convert(note, old_filetype, filetype)
-            lines = note.text.split("\n")
-            note.text = lines.pop(0)
-            raw = note.save(True)
-            new_note = List()
-            new_note.load(raw)
-            for child in note.children:
-                new_note.append(child)
-            sort = int(new_note.items[0].sort)
-            for line in lines:
-                new_note.add(line, False, sort)
-                sort -= 100000
-        else:
-            new_note = note
-            if isinstance(new_note, Note):
-                parser.convert(new_note, old_filetype, filetype)
-        for label in note.labels.all():
-            new_note.labels.add(label)
-
-        idx = self.notes.index(note)
-        new_note.touch()
+    def _on_change_type(self, old_note: NoteType, new_note: NoteType) -> None:
+        idx = self.notes.index(old_note)
         self.notes[idx] = new_note
-        self._api.add(new_note)
         self.rerender_note(new_note)
-        new_bufname = url.bufname(self._api, self._config, note)
-        if bufname != new_bufname:
-            self.dispatch("rename_files", {bufname: new_bufname})
         self._noteview.rerender_note(new_note.id)
-        self.dispatch("sync")
 
     def cmd_change_color(self) -> None:
         notes = self._get_selected_notes()

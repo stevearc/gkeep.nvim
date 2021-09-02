@@ -1,4 +1,5 @@
 import enum
+import logging
 import textwrap
 import typing as t
 from typing import TYPE_CHECKING
@@ -16,6 +17,8 @@ from gkeep.modal.layout import (
     open_win,
 )
 from pynvim.api import Buffer, Nvim, Window
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pynvim.api.window import TWinRelative

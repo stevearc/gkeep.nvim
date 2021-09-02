@@ -7,13 +7,13 @@ from functools import partial
 
 import gkeep.api
 import gkeep.modal
-import gkeep.notelist
 import gkeep.status as gstatus
 from gkeep import util
 from gkeep.config import Config, State
-from gkeep.menuitem import MenuItem
 from gkeep.modal import ConfirmResult
-from gkeep.view import View
+from gkeep.views.menuitem import MenuItem
+from gkeep.views.notelist import NoteList
+from gkeep.views.view import View
 from pynvim.api import Buffer, Nvim, Window
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Menu(View):
         config: Config,
         api: gkeep.api.KeepApi,
         modal: gkeep.modal.Modal,
-        notelist: gkeep.notelist.NoteList,
+        notelist: NoteList,
     ) -> None:
         super().__init__(vim, config, api, modal, "Menu")
         self._notelist = notelist

@@ -102,7 +102,6 @@ local function note_picker(opts)
         actions.close(prompt_bufnr)
         local cmd = action_state.select_key_to_edit_key(type)
         local fname = vim.fn.fnameescape(entry.filename)
-        print(string.format("%s %s", cmd, fname))
         vim.cmd(string.format("%s %s", cmd, fname))
       end)
       return true

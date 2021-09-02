@@ -8,22 +8,20 @@ import time
 import typing as t
 from functools import partial, wraps
 
-import gkeep.menu
 import gkeep.modal
-import gkeep.notelist
-import gkeep.noteview
 import keyring
 import pynvim
 from gkeep import fssync, parser, util
 from gkeep.api import KeepApi
 from gkeep.config import Config, State
-from gkeep.menu import Position
 from gkeep.modal import Align, ConfirmResult
 from gkeep.parser import ALLOWED_EXT, keep
 from gkeep.query import Query
 from gkeep.status import get_status
 from gkeep.thread_util import background
 from gkeep.util import NoteFormat, NoteUrl
+from gkeep.views import menu, notelist, notepopup, noteview
+from gkeep.views.menu import Position
 from gkeepapi.node import List, TopLevelNode
 
 if sys.version_info < (3, 8):
@@ -106,11 +104,14 @@ class GkeepPlugin:
             logging.getLogger(logname).setLevel(level)
         self._api = KeepApi()
         self._modal = gkeep.modal.Modal(vim)
-        self._noteview = gkeep.noteview.NoteView(vim, self._config, self._api)
-        self._notelist = gkeep.notelist.NoteList(
+        self._noteview = noteview.NoteView(vim, self._config, self._api)
+        self._notelist = notelist.NoteList(
             vim, self._config, self._api, self._modal, self._noteview
         )
-        self._menu = gkeep.menu.Menu(
+        self._notepopup = notepopup.NotePopup(
+            vim, self._config, self._api, self._modal, self._noteview
+        )
+        self._menu = menu.Menu(
             vim, self._config, self._api, self._modal, self._notelist
         )
         if self._config.sync_dir:
@@ -309,6 +310,12 @@ class GkeepPlugin:
         if self._config.state == State.InitialSync and action not in read_actions:
             return
         self._notelist.action(action, *args)
+
+    @pynvim.function("_gkeep_popup_action", sync=True)
+    @unwrap_args
+    @require_state(State.Running)
+    def popup_action(self, action: str, *args: t.Any) -> None:
+        self._notepopup.action(action, *args)
 
     @pynvim.function("_gkeep_menu_action", sync=True)
     @unwrap_args
@@ -645,11 +652,19 @@ class GkeepPlugin:
         buffer = self._vim.current.buffer
         if buffer == self._notelist.bufnr:
             return self._notelist.get_note_under_cursor()
+        elif buffer == self._notepopup.bufnr:
+            return self._notepopup.note
         else:
             url = parser.url_from_file(self._config, buffer.name, buffer)
             if url is not None and url.id is not None:
                 return self._api.get(url.id)
         return None
+
+    @pynvim.command("GkeepPopup", sync=True)
+    @require_state(State.Running)
+    @unwrap_args
+    def cmd_popup(self) -> None:
+        self._notepopup.toggle()
 
     @pynvim.command("GkeepBrowse", sync=True)
     @require_state(State.InitialSync, State.Running)

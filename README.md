@@ -110,21 +110,22 @@ password again. To remove the stored credentials from your system, run
 
 ## Commands
 
-Command         | Args                              | Description
----             | ---                               | ---
-`:GkeepLogin`   | [`{email}`]                       | Login to Google Keep
-`:GkeepLogout`  |                                   | Log out and clear stored credentials
-`:GkeepOpen`    | [`right`/`left`]                  | Open the gkeep windows
-`:GkeepEnter`   | [`menu`/`list`], [`right`/`left`] | Open and enter the gkeep windows
-`:GkeepClose`   |                                   | Close the gkeep windows
-`:GkeepToggle`  | [`right`/`left`]                  | Open or close the gkeep windows
-`:GkeepNew`     | [`note`/`list`/`neorg`], [title]  | Create a new note
-`:GkeepSync`    |                                   | Sync changes with the server
-`:GkeepRefresh` |                                   | Force fetch latest notes from server
-`:GkeepGoto`    |                                   | Open the note link under the cursor (see [links](#links))
-`:GkeepBrowse`  |                                   | Open the note in your web browser
-`:GkeepYank`    |                                   | Copy a document link to the current note (see [links](#links))
-`:GkeepCheck`   |                                   | Toggle the checkbox of the current item (see [list notes](#lists))
+Command         | Args                                 | Description
+---             | ---                                  | ---
+`:GkeepLogin`   | [`{email}`]                          | Login to Google Keep
+`:GkeepLogout`  |                                      | Log out and clear stored credentials
+`:GkeepOpen`    | [`right`/`left`]                     | Open the gkeep windows
+`:GkeepEnter`   | [`menu`/`list`], [`right`/`left`]    | Open and enter the gkeep windows
+`:GkeepClose`   |                                      | Close the gkeep windows
+`:GkeepToggle`  | [`right`/`left`]                     | Open or close the gkeep windows
+`:GkeepNew`     | [`note`/`list`/`neorg`], [`{title}`] | Create a new note
+`:GkeepSync`    |                                      | Sync changes with the server
+`:GkeepRefresh` |                                      | Force fetch latest notes from server
+`:GkeepGoto`    |                                      | Open the note link under the cursor (see [links](#links))
+`:GkeepBrowse`  |                                      | Open the note in your web browser
+`:GkeepPopup`   |                                      | Open a float window for the current note to perform edits (e.g. pin/archive/delete)
+`:GkeepYank`    |                                      | Copy a document link to the current note (see [links](#links))
+`:GkeepCheck`   |                                      | Toggle the checkbox of the current item (see [list notes](#lists))
 
 Additionally, there is the function `GkeepStatus()` which returns the current
 status message (usually about syncing notes). This can be used in your

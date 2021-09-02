@@ -6,8 +6,8 @@ import typing as t
 from pathlib import Path
 
 import pynvim
-from gkeep.menuitem import MenuItem
 from gkeep.thread_util import background
+from gkeep.views.menuitem import MenuItem
 
 logger = logging.getLogger(__name__)
 
