@@ -351,7 +351,7 @@ class GkeepPlugin:
             return [c for c in candidates if c.startswith(base)]
 
     @pynvim.autocmd("BufReadCmd", "gkeep://*", eval='expand("<amatch>")', sync=True)
-    @require_state(State.Running, log=True)
+    @require_state(State.InitialSync, State.Running, log=True)
     def _load_note(self, address: str) -> None:
         bufnr = self._vim.current.buffer
         url = NoteUrl.from_ephemeral_bufname(address)
@@ -372,12 +372,15 @@ class GkeepPlugin:
         self._vim.exec_lua("require('gkeep').on_ephemeral_buf_read(...)", ext)
 
     @pynvim.autocmd("BufWriteCmd", "gkeep://*", eval='expand("<abuf>")', sync=True)
-    @require_state(State.Running, log=True)
+    @require_state(State.InitialSync, State.Running, log=True)
     def _save_note(self, bufnrstr: str) -> None:
         bufnr = self._vim.buffers[int(bufnrstr)]
         url = parser.url_from_file(self._config, bufnr.name, bufnr)
         if not url:
             util.echoerr(self._vim, f"Buffer {bufnrstr} has malformed Gkeep bufname")
+            return
+        if self._config.state == State.InitialSync:
+            util.echoerr(self._vim, "Cannot save: Gkeep is still starting up")
             return
         self._noteview.save_buffer(bufnr)
         self._notelist.rerender_note(url.id)
@@ -486,7 +489,7 @@ class GkeepPlugin:
                 self._vim.exec_lua, callback, querystr, query.match_str, notes
             )
 
-        if self._config.state != State.Running:
+        if self._config.state not in (State.InitialSync, State.Running):
             respond()
             return
         self._api.run_search(query, respond)
