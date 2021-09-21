@@ -302,8 +302,12 @@ class GkeepPlugin:
 
     @pynvim.function("_gkeep_list_action", sync=True)
     @unwrap_args
-    @require_state(State.Running)
+    @require_state(State.InitialSync, State.Running)
     def list_action(self, action: str, *args: t.Any) -> None:
+        # Only allow read actions until state is Running
+        read_actions = ["preview", "select", "cursor_moved", "update_preview"]
+        if self._config.state == State.InitialSync and action not in read_actions:
+            return
         self._notelist.action(action, *args)
 
     @pynvim.function("_gkeep_menu_action", sync=True)
