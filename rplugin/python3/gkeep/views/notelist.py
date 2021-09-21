@@ -7,7 +7,7 @@ import gkeep.api
 import gkeep.modal
 from gkeep import parser, util
 from gkeep.config import KEEP_FT, Config
-from gkeep.modal import Align, Element, GridLayout, TextAlign
+from gkeep.modal import Align
 from gkeep.query import Query
 from gkeep.util import NoteEnum, NoteFormat, NoteType, NoteUrl
 from gkeep.views.noteview import NoteView
@@ -18,7 +18,7 @@ from gkeep.views.view_util import (
     render_note_line,
     render_note_list,
 )
-from gkeepapi.node import ColorValue, List, Note
+from gkeepapi.node import ColorValue, Note
 from pynvim.api import Buffer, Nvim, Window
 
 logger = logging.getLogger(__name__)
