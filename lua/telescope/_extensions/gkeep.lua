@@ -3,16 +3,40 @@ local action_state = require("telescope.actions.state")
 local actions = require("telescope.actions")
 local conf = require("telescope.config").values
 local entry_display = require("telescope.pickers.entry_display")
-local finders = require("telescope.finders")
 local gkeep = require("gkeep")
 local pickers = require("telescope.pickers")
 local previewers = require("telescope.previewers.buffer_previewer")
 local putils = require("telescope.previewers.utils")
 local sorters = require("telescope.sorters")
 local telescope = require("telescope")
-local a = require("plenary.async_lib")
-local async, await = a.async, a.await
-local channel = a.util.channel
+
+-- This taken from finders.lua in telescope.nvim
+local _callable_obj = function()
+  local obj = {}
+
+  obj.__index = obj
+  obj.__call = function(t, ...)
+    return t:_find(...)
+  end
+
+  obj.close = function() end
+
+  return obj
+end
+
+local DynamicAsyncFinder = _callable_obj()
+
+function DynamicAsyncFinder:new(opts)
+  opts = opts or {}
+
+  local obj = setmetatable({
+    curr_buf = opts.curr_buf,
+    _find = opts.fn,
+    entry_maker = opts.entry_maker,
+  }, self)
+
+  return obj
+end
 
 local function note_picker(opts)
   opts = opts or {}
@@ -28,21 +52,6 @@ local function note_picker(opts)
       { remaining = true },
     },
   })
-
-  local search = async(function(query)
-    local tx, rx = channel.oneshot()
-    function gkeep.on_search_results(ret_query, match_str, results)
-      if query == ret_query then
-        -- This hack is so we don't call tx() twice when queries are slow
-        query = "__NOMATCH__"
-        parsed_prompt = match_str
-        tx(results)
-      end
-    end
-    vim.fn._gkeep_search(query, "require('gkeep').on_search_results(...)")
-    local results = await(rx())
-    return results
-  end)
 
   local function make_display(entry)
     local columns = {
@@ -66,6 +75,22 @@ local function note_picker(opts)
     }
   end
 
+  local search = function(self, prompt, process_result, process_complete)
+    local query = prompt
+    function gkeep.on_search_results(ret_query, match_str, results)
+      if query == ret_query then
+        -- This hack is so we don't call tx() twice when queries are slow
+        query = "__NOMATCH__"
+        parsed_prompt = match_str
+        for _, item in ipairs(results) do
+          process_result(self.entry_maker(item))
+        end
+        process_complete()
+      end
+    end
+    vim.fn._gkeep_search(query, "require('gkeep').on_search_results(...)")
+  end
+
   local previewer = previewers.new_buffer_previewer({
     title = "Note Preview",
 
@@ -87,7 +112,7 @@ local function note_picker(opts)
 
   pickers.new(opts, {
     prompt_title = "Google Keep Notes",
-    finder = finders.new_dynamic({
+    finder = DynamicAsyncFinder:new({
       curr_buf = vim.api.nvim_get_current_buf(),
       fn = search,
       entry_maker = make_entry,
