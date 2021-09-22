@@ -74,7 +74,8 @@ def _gen_list_body(note: "List") -> t.Iterator[str]:
             for child in item.subitems:
                 if child.checked:
                     checked = "partial"
-        yield f"{prefix}{util.checkbox(checked)}{item.text}"
+        text = item.text.replace("\n", "\\n")
+        yield f"{prefix}{util.checkbox(checked)}{text}"
 
 
 def _sync_header(note: TopLevelNode, header: Header, labels: t.Sequence[Label]) -> None:
