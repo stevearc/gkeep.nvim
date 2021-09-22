@@ -4,11 +4,31 @@ from functools import partial
 
 from gkeep import fssync, parser, util
 from gkeep.api import KeepApi
-from gkeep.config import Config
+from gkeep.config import KEEP_FT, Config
 from gkeep.modal import Element, GridLayout, Modal, TextAlign
 from gkeep.util import NoteEnum, NoteFormat, NoteType, NoteUrl
 from gkeepapi.node import List, Note
 from pynvim.api import Buffer, Nvim
+
+
+def get_note_format(config: Config, note: NoteType) -> NoteFormat:
+    if util.get_type(note) == NoteEnum.LIST:
+        return NoteFormat.LIST
+    elif parser.get_filetype(config, note) == "norg":
+        return NoteFormat.NEORG
+    else:
+        return NoteFormat.NOTE
+
+
+def split_type_and_format(note_type: NoteFormat) -> t.Tuple[NoteEnum, str]:
+    if note_type == NoteFormat.NOTE:
+        return (NoteEnum.NOTE, KEEP_FT)
+    elif note_type == NoteFormat.LIST:
+        return (NoteEnum.LIST, KEEP_FT)
+    elif note_type == NoteFormat.NEORG:
+        return (NoteEnum.NOTE, "norg")
+    else:
+        raise ValueError(f"Invalid note type {note_type}")
 
 
 def get_local_changed_file(
@@ -111,7 +131,7 @@ class NoteTypeEditor:
     ) -> None:
         self._callback = callback
         layout = self.get_note_type_layout()
-        initial_value = (util.get_type(note), parser.get_filetype(self._config, note))
+        initial_value = get_note_format(self._config, note)
         self._modal.confirm.show(
             f"Change type of {note.title}",
             partial(self._change_type, note),
@@ -120,8 +140,8 @@ class NoteTypeEditor:
             layout=layout,
         )
 
-    def _change_type(self, note: NoteType, new_type: t.Tuple[NoteEnum, str]) -> None:
-        note_type, filetype = new_type
+    def _change_type(self, note: NoteType, new_type: NoteFormat) -> None:
+        note_type, filetype = split_type_and_format(new_type)
         url = NoteUrl.from_note(note)
         bufname = url.bufname(self._api, self._config, note)
         old_filetype = parser.get_filetype(self._config, note)

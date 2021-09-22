@@ -6,7 +6,7 @@ from functools import partial
 import gkeep.api
 import gkeep.modal
 from gkeep import parser, util
-from gkeep.config import KEEP_FT, Config
+from gkeep.config import Config
 from gkeep.modal import Align
 from gkeep.query import Query
 from gkeep.util import NoteEnum, NoteFormat, NoteType, NoteUrl
@@ -17,6 +17,7 @@ from gkeep.views.view_util import (
     get_local_changed_file,
     render_note_line,
     render_note_list,
+    split_type_and_format,
 )
 from gkeepapi.node import ColorValue, Note
 from pynvim.api import Buffer, Nvim, Window
@@ -266,7 +267,7 @@ class NoteList(View):
         )
 
     def _new_note(self, note_type: NoteFormat, title: str) -> None:
-        type, filetype = _split_type_and_format(note_type)
+        type, filetype = split_type_and_format(note_type)
         if type == NoteEnum.NOTE:
             note = self._api.createNote(title)
         elif type == NoteEnum.LIST:
@@ -449,14 +450,3 @@ class NoteList(View):
         line = util.get_link(note)
         self._vim.funcs.setreg("+", line)
         self._vim.funcs.setreg("", line)
-
-
-def _split_type_and_format(note_type: NoteFormat) -> t.Tuple[NoteEnum, str]:
-    if note_type == NoteFormat.NOTE:
-        return (NoteEnum.NOTE, KEEP_FT)
-    elif note_type == NoteFormat.LIST:
-        return (NoteEnum.LIST, KEEP_FT)
-    elif note_type == NoteFormat.NEORG:
-        return (NoteEnum.NOTE, "norg")
-    else:
-        raise ValueError(f"Invalid note type {note_type}")
