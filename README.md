@@ -125,7 +125,7 @@ Command         | Args                                 | Description
 `:GkeepBrowse`  |                                      | Open the note in your web browser
 `:GkeepPopup`   |                                      | Open a float window for the current note to perform edits (e.g. pin/archive/delete)
 `:GkeepYank`    |                                      | Copy a document link to the current note (see [links](#links))
-`:GkeepCheck`   |                                      | Toggle the checkbox of the current item (see [list notes](#lists))
+`:GkeepCheck`   |                                      | Toggle the checkbox of the item under cursor (see [list notes](#lists))
 
 Additionally, there is the function `GkeepStatus()` which returns the current
 status message (usually about syncing notes). This can be used in your

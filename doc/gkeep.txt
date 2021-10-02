@@ -1,0 +1,111 @@
+*gkeep.txt*
+*Gkeep* *gkeep* *gkeep.nvim*
+===============================================================================
+CONTENTS                                                         *gkeep-contents*
+
+    1. Commands........................................|gkeep-commands|
+    2. Options.........................................|gkeep-options|
+
+===============================================================================
+COMMANDS                                                         *gkeep-commands*
+
+                                                                    *:GkeepLogin*
+:GkeepLogin [email]
+    Log in to Google Keep
+
+                                                                   *:GkeepLogout*
+:GkeepLogout
+    Log out of Google Keep and clear all stored credentials from the keyring
+
+                                                                     *:GkeepOpen*
+:GkeepOpen [right/left]
+    Open the gkeep windows
+
+                                                                    *:GkeepEnter*
+:GkeepEnter [menu/list] [right/left]
+    Open the gkeep windows and move the cursor into the menu or list
+
+                                                                    *:GkeepClose*
+:GkeepClose
+    Close the gkeep windows
+
+                                                                   *:GkeepToggle*
+:GkeepToggle [right/left]
+    Toggle visibility of gkeep windows
+
+                                                                      *:GkeepNew*
+:GkeepNew [note/list/neorg] [title]
+    Create a new note
+
+                                                                     *:GkeepSync*
+:GkeepSync
+    Sync changes with the server
+
+                                                                  *:GkeepRefresh*
+:GkeepRefresh
+    Force fetch latest notes from server. This will discard any local changes.
+
+                                                                     *:GkeepGoto*
+:GkeepGoto
+    Open the note link that is under the cursor
+
+                                                                   *:GkeepBrowse*
+:GkeepBrowse
+    Open the note in your web browser. Uses 'open' or 'xdg-open' if available.
+    If not, will look for the BROWSER environment variable.
+
+                                                                    *:GkeepPopup*
+:GkeepPopup
+    Open a float window for the current note. This is used for making edits to
+    the metadata of the note (e.g. pinned/archived/deleted, color, changing
+    the type, etc)
+
+                                                                     *:GkeepYank*
+:GkeepYank
+    Copy a document link to the current note
+
+                                                                    *:GkeepCheck*
+:GkeepCheck
+    Toggle the checkbox of the item under the cursor
+
+===============================================================================
+OPTIONS                                                           *gkeep-options*
+
+g:gkeep_sync_dir                                               *g:gkeep_sync_dir*
+    Set this to a path to sync your Google Keep notes to a directory of files
+    on disk.
+
+g:gkeep_sync_archived                                     *g:gkeep_sync_archived*
+    Set to 1 or v:true to also sync archived notes to disk (when
+    |g:gkeep_sync_dir| is set)
+
+g:gkeep_nerd_font                                             *g:gkeep_nerd_font*
+    Set to 0 or v:false to disable the default icons, which require a patched
+    font.
+
+g:gkeep_icons                                                     *g:gkeep_icons*
+    Set the icons to use for various purposes in the UI. A complete list of
+    icons can be found in config.py.
+    A short example:
+>
+    let g:gkeep_icons = {
+      \ 'email': 'E',
+      \ 'label': 'L',
+      \ 'search': '?',
+      \ }
+<
+g:gkeep_width                                                     *g:gkeep_width*
+    Set the width of the menu & note list sidebar (default 32)
+
+g:gkeep_log_levels                                           *g:gkeep_log_levels*
+    Set the log levels for different parts of the plugin. Find the log file
+    with 'checkhealth gkeep'. A list of possible levels can be found here:
+    https://docs.python.org/3/library/logging.html#levels >
+>
+    let g:gkeep_log_levels = {
+      \ 'gkeep': 'warning',
+      \ 'gkeepapi': 'warning',
+      \ }
+<
+===============================================================================
+vim:ft=help:et:ts=2:sw=2:sts=2:norl
