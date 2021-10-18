@@ -7,8 +7,10 @@ import sys
 import time
 import typing as t
 from functools import partial, wraps
+from uuid import getnode
 
 import gkeep.modal
+import gpsoauth
 import keyring
 import pynvim
 from gkeep import fssync, parser, util
@@ -22,6 +24,7 @@ from gkeep.thread_util import background
 from gkeep.util import NoteFormat, NoteUrl
 from gkeep.views import menu, notelist, notepopup, noteview
 from gkeep.views.menu import Position
+from gkeepapi.exception import LoginException
 from gkeepapi.node import List, TopLevelNode
 
 if sys.version_info < (3, 8):
@@ -597,7 +600,24 @@ class GkeepPlugin:
                 secret=True,
             )
         else:
-            self._api.login(email, password, sync=False)
+            try:
+                self._api.login(email, password, sync=False)
+            except LoginException as e:
+                res = gpsoauth.perform_master_login(email, password, str(getnode()))
+                url = res.get("Url")
+                if url:
+                    util.open_url(self._vim, url)
+                    self._vim.out_write(
+                        "Complete login flow in browser, then re-attempt GkeepLogin.\n"
+                    )
+                    return
+                else:
+                    util.echoerr(
+                        self._vim,
+                        f"Unknown error logging in; please report an issue on github. API error: {e}",
+                    )
+                    return
+
             token = self._api.getMasterToken()
             assert token is not None
             keyring.set_password("google-keep-token", email, token)
@@ -678,20 +698,7 @@ class GkeepPlugin:
             util.echoerr(self._vim, "Google Keep note not found")
             return
         link = util.get_link(note)
-        cmd = None
-        if self._vim.funcs.executable("open"):
-            cmd = "open"
-        elif self._vim.funcs.executable("xdg-open"):
-            cmd = "xdg-open"
-        else:
-            cmd = os.environ.get("BROWSER")
-        if cmd is None:
-            util.echoerr(
-                self._vim,
-                "Could not find web browser. Set the BROWSER environment variable and restart",
-            )
-        else:
-            subprocess.call([cmd, link])
+        util.open_url(self._vim, link)
 
     @pynvim.command(
         "GkeepNew", nargs="*", complete="customlist,_gkeep_complete_new", sync=True

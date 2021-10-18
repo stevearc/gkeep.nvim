@@ -2,6 +2,7 @@ import enum
 import logging
 import os
 import re
+import subprocess
 import sys
 import typing as t
 import unicodedata
@@ -173,3 +174,20 @@ def set_note_opts_and_vars(note: NoteType, bufnr: Buffer) -> None:
     if bufnr.options["filetype"] == KEEP_FT:
         shiftwidth = 2 if nt == NoteEnum.NOTE else 4
         bufnr.options["shiftwidth"] = shiftwidth
+
+
+def open_url(vim: pynvim.Nvim, url: str) -> None:
+    cmd = None
+    if vim.funcs.executable("open"):
+        cmd = "open"
+    elif vim.funcs.executable("xdg-open"):
+        cmd = "xdg-open"
+    else:
+        cmd = os.getenv("BROWSER")
+    if cmd is None:
+        echoerr(
+            vim,
+            "Could not find web browser. Set the BROWSER environment variable and restart",
+        )
+    else:
+        subprocess.call([cmd, url])
