@@ -7,7 +7,6 @@ local gkeep = require("gkeep")
 local pickers = require("telescope.pickers")
 local previewers = require("telescope.previewers.buffer_previewer")
 local putils = require("telescope.previewers.utils")
-local sorters = require("telescope.sorters")
 local telescope = require("telescope")
 
 -- This taken from finders.lua in telescope.nvim
@@ -104,10 +103,12 @@ local function note_picker(opts)
     end,
   })
 
-  local sorter = sorters.empty()
-  local fuzzy = conf.generic_sorter(opts)
-  sorter.scoring_function = function(_, prompt, line)
-    return fuzzy:scoring_function(parsed_prompt, line)
+  local sorter = conf.generic_sorter(opts)
+  -- Scoring function should ignore flags in the query (e.g. '+p' or '-t')
+  -- so make it operate on the parsed_prompt instead of the prompt
+  local scoring_function = sorter.scoring_function
+  sorter.scoring_function = function(self, prompt, line)
+    return scoring_function(self, parsed_prompt, line)
   end
 
   pickers.new(opts, {
