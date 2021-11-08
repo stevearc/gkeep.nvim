@@ -328,17 +328,40 @@ days), and will have `[Backup]` in the title.
 
 ### Telescope
 
-If you have [telescope](https://github.com/nvim-telescope/telescope.nvim)
-installed, you can use it to search and select your notes. The search
-funtionality here uses the same query syntax as the [search](#search) function.
+If you have
+[telescope](https://github.com/nvim-telescope/telescope.nvim) installed,
+you can use it to search and select your notes. There are two pickers
+that you can use:
 
-Load the extension with:
+* `:Telescope gkeep` - Search for and open a note
+* `:Telescope gkeep link` - Search for a note and insert a link to it
+  at the current cursor position (see [links](#links))
 
-```lua
+Additionally, each of these pickers can be configured to use a different
+type of search. The two options are:
+
+* `"all_text"` - Searches the title and contents of all notes and uses
+  the same query syntax as the [search](#search) function. With this
+  method, the searching happens in a thread in python and asynchronously reports
+  results to telescope, which does a minimal amount of sorting.
+* `"title"` - Searches only the titles of notes. With this method,
+  telescope fetches the note titles from the python process and
+  sorts/filters like usual.
+
+``` lua
+require("telescope").setup({
+  -- You can optionally configure the search method for each of the pickers.
+  -- Below are the default values.
+  extensions = {
+    gkeep = {
+      find_method = "all_text",
+      link_method = "title",
+    },
+  },
+})
+-- Load the extension
 require('telescope').load_extension('gkeep')
 ```
-
-You can then search your notes with `:Telescope gkeep`
 
 ### Neorg
 

@@ -1,12 +1,9 @@
-local action_set = require("telescope.actions.set")
-local action_state = require("telescope.actions.state")
-local actions = require("telescope.actions")
 local conf = require("telescope.config").values
 local gkeep = require("gkeep")
 local pickers = require("telescope.pickers")
 local util = require("telescope._extensions.gkeep.util")
 
-local function note_picker(opts)
+local function search_picker(opts)
   opts = opts or {}
   vim.fn._gkeep_preload()
 
@@ -16,8 +13,6 @@ local function note_picker(opts)
     local query = prompt
     function gkeep.on_search_results(ret_query, match_str, results)
       if query == ret_query then
-        -- This hack is so we don't call tx() twice when queries are slow
-        query = "__NOMATCH__"
         parsed_prompt = match_str
         for _, item in ipairs(results) do
           process_result(self.entry_maker(item))
@@ -33,7 +28,10 @@ local function note_picker(opts)
   -- so make it operate on the parsed_prompt instead of the prompt
   local scoring_function = sorter.scoring_function
   sorter.scoring_function = function(self, prompt, line)
-    return scoring_function(self, parsed_prompt, line)
+    local score = scoring_function(self, parsed_prompt, line)
+    -- Don't filter out any results (filters when score == -1) because we might
+    -- have matched on the content not the title
+    return score < 0 and 0 or score
   end
 
   pickers.new(opts, {
@@ -45,19 +43,8 @@ local function note_picker(opts)
     }),
     sorter = sorter,
     previewer = util.previewer,
-    -- Create our own mapping because the built-in telescope select action
-    -- normalizes the path, which removes the second slash from gkeep://
-    attach_mappings = function(prompt_bufnr)
-      action_set.select:replace(function(prompt_bufnr, type)
-        local entry = action_state.get_selected_entry()
-        actions.close(prompt_bufnr)
-        local cmd = action_state.select_key_to_edit_key(type)
-        local fname = vim.fn.fnameescape(entry.filename)
-        vim.cmd(string.format("%s %s", cmd, fname))
-      end)
-      return true
-    end,
+    attach_mappings = opts.attach_mappings,
   }):find()
 end
 
-return note_picker
+return search_picker

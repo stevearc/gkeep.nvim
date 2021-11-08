@@ -468,6 +468,27 @@ class GkeepPlugin:
             if note is not None:
                 util.set_note_opts_and_vars(note, bufnr)
 
+    def _note_to_result(self, note: TopLevelNode) -> t.Dict:
+        url = NoteUrl.from_note(note)
+        if isinstance(note, List):
+            icon = self._config.get_icon("list")
+        else:
+            icon = self._config.get_icon("note")
+        if note.trashed:
+            icon2 = self._config.get_icon("trashed")
+        elif note.archived:
+            icon2 = self._config.get_icon("archived")
+        else:
+            icon2 = ""
+        return {
+            "id": note.id,
+            "icon": icon,
+            "icon2": icon2,
+            "color": f"GKeep{note.color.value}",
+            "title": note.title,
+            "filename": url.bufname(self._api, self._config, note),
+        }
+
     @pynvim.function("_gkeep_search", sync=True)
     @unwrap_args
     def search(self, querystr: str, callback: str) -> None:
@@ -475,29 +496,7 @@ class GkeepPlugin:
 
         def respond() -> None:
             results = self._api.get_search(query)
-            notes = []
-            for note in results:
-                url = NoteUrl.from_note(note)
-                if isinstance(note, List):
-                    icon = self._config.get_icon("list")
-                else:
-                    icon = self._config.get_icon("note")
-                if note.trashed:
-                    icon2 = self._config.get_icon("trashed")
-                elif note.archived:
-                    icon2 = self._config.get_icon("archived")
-                else:
-                    icon2 = ""
-                notes.append(
-                    {
-                        "id": note.id,
-                        "icon": icon,
-                        "icon2": icon2,
-                        "color": f"GKeep{note.color.value}",
-                        "title": note.title,
-                        "filename": url.bufname(self._api, self._config, note),
-                    }
-                )
+            notes = [self._note_to_result(n) for n in results]
             self._vim.async_call(
                 self._vim.exec_lua, callback, querystr, query.match_str, notes
             )
@@ -506,6 +505,13 @@ class GkeepPlugin:
             respond()
             return
         self._api.run_search(query, respond)
+
+    @pynvim.function("_gkeep_all_notes", sync=True)
+    @unwrap_args
+    def get_titles(self) -> t.Optional[t.List[t.Dict]]:
+        if self._config.state not in (State.InitialSync, State.Running):
+            return None
+        return [self._note_to_result(n) for n in self._api.all()]
 
     @pynvim.function("_gkeep_render_note", sync=True)
     @unwrap_args
