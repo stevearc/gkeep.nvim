@@ -186,6 +186,14 @@ class GkeepPlugin:
                 state = self._config.load_state()
                 self._resume(email, token, state)
 
+    @pynvim.function("_gkeep_preload_if_any_open")
+    @unwrap_args
+    def preload_if_any_open(self) -> None:
+        for buffer in self._vim.buffers:
+            if NoteUrl.is_ephemeral(buffer.name):
+                self.preload()
+                return
+
     @pynvim.function("_gkeep_dispatch", sync=True)
     @unwrap_args
     def dispatch_event(self, event: str, *args: t.Any) -> None:
@@ -300,6 +308,12 @@ class GkeepPlugin:
 
     @require_state(State.Running)
     def event_on_start(self) -> None:
+        # Rerender any ephemeral buffers that are open
+        for bufnr in self._vim.buffers:
+            bufname = bufnr.name
+            if NoteUrl.is_ephemeral(bufname) and not bufnr.options["modified"]:
+                url = NoteUrl.from_ephemeral_bufname(bufname)
+                self._noteview.render(bufnr, url)
         for cb in self._start_callbacks:
             cb()
 

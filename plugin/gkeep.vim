@@ -9,6 +9,7 @@ endif
 aug GkeepSyncOnFocus
   au!
   au FocusGained * silent! GkeepSync
+  au SessionLoadPost * call _gkeep_preload_if_any_open()
 aug END
 
 if &termguicolors || has('gui_running')
