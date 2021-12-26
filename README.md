@@ -1,4 +1,5 @@
 # Gkeep.nvim
+
 Neovim integration for [Google Keep](https://keep.google.com/), built using
 [gkeepapi](https://github.com/kiwiz/gkeepapi)
 
@@ -6,83 +7,91 @@ Neovim integration for [Google Keep](https://keep.google.com/), built using
 
 ## Requirements
 
-* Neovim 0.5
-* Python 3.6+
-* A [patched font](https://www.nerdfonts.com/) (optional. Used for icons)
+- Neovim 0.5
+- Python 3.6+
+- A [patched font](https://www.nerdfonts.com/) (optional. Used for icons)
 
 ## Table of Contents
-* [Installation](#installation)
-* [Setup](#setup)
-* [Commands](#commands)
-* [Configuration](#configuration)
-* [Features](#features)
-  * [Menu](#menu)
-  * [Note list](#note-list)
-  * [Note editing](#note-editing)
-  * [Links](#links)
-  * [Search](#search)
-  * [Ephemeral notes](#ephemeral-notes)
-  * [File sync](#file-sync)
-* [Third-party integrations](#third-party-integrations)
-  * [Telescope](#telescope)
-  * [Neorg](#neorg)
-* [Highlight](#highlight)
-* [FAQ](#faq)
+
+- [Installation](#installation)
+- [Setup](#setup)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [Features](#features)
+  - [Menu](#menu)
+  - [Note list](#note-list)
+  - [Note editing](#note-editing)
+  - [Links](#links)
+  - [Search](#search)
+  - [Ephemeral notes](#ephemeral-notes)
+  - [File sync](#file-sync)
+- [Third-party integrations](#third-party-integrations)
+  - [Telescope](#telescope)
+  - [Neorg](#neorg)
+- [Highlight](#highlight)
+- [FAQ](#faq)
 
 ## Installation
+
 gkeep supports all the usual plugin managers
 
 <details>
   <summary>Packer</summary>
 
-  ```lua
-  require('packer').startup(function()
-      use {'stevearc/gkeep.nvim', run = ':UpdateRemotePlugins'}
-  end)
-  ```
+```lua
+require('packer').startup(function()
+    use {'stevearc/gkeep.nvim', run = ':UpdateRemotePlugins'}
+end)
+```
+
 </details>
 
 <details>
   <summary>Paq</summary>
 
-  ```lua
-  require "paq" {
-      {'stevearc/gkeep.nvim', run = vim.fn['remote#host#UpdateRemotePlugins']};
-  }
-  ```
+```lua
+require "paq" {
+    {'stevearc/gkeep.nvim', run = vim.fn['remote#host#UpdateRemotePlugins']};
+}
+```
+
 </details>
 
 <details>
   <summary>vim-plug</summary>
 
-  ```vim
-  Plug 'stevearc/gkeep.nvim', { 'do': ':UpdateRemotePlugins' }
-  ```
+```vim
+Plug 'stevearc/gkeep.nvim', { 'do': ':UpdateRemotePlugins' }
+```
+
 </details>
 
 <details>
   <summary>dein</summary>
 
-  ```vim
-  call dein#add('stevearc/gkeep.nvim')
-  ```
+```vim
+call dein#add('stevearc/gkeep.nvim')
+```
+
 </details>
 
 <details>
   <summary>Pathogen</summary>
 
-  ```sh
-  git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git ~/.vim/bundle/
-  ```
+```sh
+git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git ~/.vim/bundle/
+```
+
 </details>
 
 <details>
   <summary>Neovim native package</summary>
 
-  ```sh
-  git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git \
-    "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/pack/gkeep/start/gkeep.nvim
-  ```
+```sh
+git clone --depth=1 https://github.com/stevearc/gkeep.nvim.git \
+  "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/pack/gkeep/start/gkeep.nvim
+```
+
 </details>
 
 Post-install, you will need to run `:UpdateRemotePlugins` if your installer
@@ -110,41 +119,42 @@ password again. To remove the stored credentials from your system, run
 
 ## Commands
 
-Command             | Args                                 | Description
----                 | ---                                  | ---
-`:GkeepLogin`       | [`{email}`]                          | Login to Google Keep
-`:GkeepLogout`      |                                      | Log out and clear stored credentials
-`:GkeepOpen`        | [`right`/`left`]                     | Open the gkeep windows
-`:GkeepEnter`       | [`menu`/`list`], [`right`/`left`]    | Open and enter the gkeep windows
-`:GkeepClose`       |                                      | Close the gkeep windows
-`:GkeepToggle`      | [`right`/`left`]                     | Open or close the gkeep windows
-`:GkeepNew`         | [`note`/`list`/`neorg`], [`{title}`] | Create a new note
-`:GkeepSync`        |                                      | Sync changes with the server
-`:GkeepRefresh`     |                                      | Force fetch latest notes from server
-`:GkeepGoto`        |                                      | Open the note link under the cursor (see [links](#links))
-`:GkeepBrowse`      |                                      | Open the note in your web browser
-`:GkeepPopup`       |                                      | Open a float window for the current note to perform edits (e.g. pin/archive/delete)
-`:GkeepYank`        |                                      | Copy a document link to the current note (see [links](#links))
-`:GkeepUpdateLinks` |                                      | Updates links in the note to match their titles
-`:GkeepCheck`       |                                      | Toggle the checkbox of the item under cursor (see [list notes](#lists))
+| Command             | Args                                 | Description                                                                         |
+| ------------------- | ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `:GkeepLogin`       | [`{email}`]                          | Login to Google Keep                                                                |
+| `:GkeepLogout`      |                                      | Log out and clear stored credentials                                                |
+| `:GkeepOpen`        | [`right`/`left`]                     | Open the gkeep windows                                                              |
+| `:GkeepEnter`       | [`menu`/`list`], [`right`/`left`]    | Open and enter the gkeep windows                                                    |
+| `:GkeepClose`       |                                      | Close the gkeep windows                                                             |
+| `:GkeepToggle`      | [`right`/`left`]                     | Open or close the gkeep windows                                                     |
+| `:GkeepNew`         | [`note`/`list`/`neorg`], [`{title}`] | Create a new note                                                                   |
+| `:GkeepSync`        |                                      | Sync changes with the server                                                        |
+| `:GkeepRefresh`     |                                      | Force fetch latest notes from server                                                |
+| `:GkeepGoto`        |                                      | Open the note link under the cursor (see [links](#links))                           |
+| `:GkeepBrowse`      |                                      | Open the note in your web browser                                                   |
+| `:GkeepPopup`       |                                      | Open a float window for the current note to perform edits (e.g. pin/archive/delete) |
+| `:GkeepYank`        |                                      | Copy a document link to the current note (see [links](#links))                      |
+| `:GkeepUpdateLinks` |                                      | Updates links in the note to match their titles                                     |
+| `:GkeepCheck`       |                                      | Toggle the checkbox of the item under cursor (see [list notes](#lists))             |
 
 Additionally, there is the function `GkeepStatus()` which returns the current
 status message (usually about syncing notes). This can be used in your
 statusline if desired.
 
 ## Configuration
+
 Set the following global variables to configure gkeep.
 
-Variable                | Type   | Default                                                                                                 | Description
----                     | ---    | ---                                                                                                     | ---
-`g:gkeep_sync_dir`      | string | `null`                                                                                                  | The directory to sync notes into (see [file sync](#file-sync) below)
-`g:gkeep_sync_archived` | bool   | `false`                                                                                                 | If `true`, will sync archived notes as well
-`g:gkeep_nerd_font`     | bool   | `true`                                                                                                  | When `true`, will use icons from your [patched font](https://www.nerdfonts.com/)
-`g:gkeep_icons`         | dict   | See [config.py](https://github.com/stevearc/gkeep.nvim/blob/master/rplugin/python3/gkeep/config.py#L26) | Override the icons used
-`g:gkeep_width`         | int    | 32                                                                                                      | Set the width of the sidebar
-`g:gkeep_log_levels`    | dict   | `{'gkeep': 'warning', 'gkeepapi': 'warning'}`                                                           | Python log levels. See [logging levels](https://docs.python.org/3/library/logging.html#levels) for a list of levels
+| Variable                | Type   | Default                                                                                                 | Description                                                                                                         |
+| ----------------------- | ------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `g:gkeep_sync_dir`      | string | `null`                                                                                                  | The directory to sync notes into (see [file sync](#file-sync) below)                                                |
+| `g:gkeep_sync_archived` | bool   | `false`                                                                                                 | If `true`, will sync archived notes as well                                                                         |
+| `g:gkeep_nerd_font`     | bool   | `true`                                                                                                  | When `true`, will use icons from your [patched font](https://www.nerdfonts.com/)                                    |
+| `g:gkeep_icons`         | dict   | See [config.py](https://github.com/stevearc/gkeep.nvim/blob/master/rplugin/python3/gkeep/config.py#L26) | Override the icons used                                                                                             |
+| `g:gkeep_width`         | int    | 32                                                                                                      | Set the width of the sidebar                                                                                        |
+| `g:gkeep_log_levels`    | dict   | `{'gkeep': 'warning', 'gkeepapi': 'warning'}`                                                           | Python log levels. See [logging levels](https://docs.python.org/3/library/logging.html#levels) for a list of levels |
 
-Note that these variables must be set *before* gkeep is loaded in order for them
+Note that these variables must be set _before_ gkeep is loaded in order for them
 to take effect.
 
 ## Features
@@ -156,9 +166,9 @@ to take effect.
 The Menu is the top window that displays your labels and searches. Use `?` to
 view all the keymaps available. The main features include:
 
-* Search your notes
-* Save/edit/delete searches
-* Create/edit/delete labels
+- Search your notes
+- Save/edit/delete searches
+- Create/edit/delete labels
 
 ### Note list
 
@@ -168,20 +178,23 @@ The Note list is the bottom window that displays the notes that match the
 currently-selected menu item (label, search, etc). Use `?` to view all the
 keymaps available. The main features include:
 
-* Open notes
-* Archive or delete notes
-* Create new notes
-* Change the note type or color
-* Change the sort order
+- Open notes
+- Archive or delete notes
+- Create new notes
+- Change the note type or color
+- Change the sort order
 
 ### Note editing
+
 Notes will have the title, id, and labels at the top like so:
+
 ```markdown
 # My note
+
 id: 1626733972853.1206798729
 labels: First label, Another label
-
 ```
+
 To change the note title, simply edit the file and `:w`. The same goes for
 labels. If the note doesn't have any labels yet, manually add the `labels:` line
 and they will be picked up when you save. Do not change the `id:` line.
@@ -189,10 +202,11 @@ and they will be picked up when you save. Do not change the `id:` line.
 There is an omnicomplete function (`<C-x><C-o>`) that will complete the labels
 for you
 
-**Note**: if you are using [file sync](#file-sync), renaming files *will not*
-rename the note. Changing the note title *will* rename the file.
+**Note**: if you are using [file sync](#file-sync), renaming files _will not_
+rename the note. Changing the note title _will_ rename the file.
 
 #### Lists
+
 Google Keep has a special type of note to represent lists, and gkeep customizes
 the editing environment heavily to enforce the proper format. You may wish to
 bind `:GkeepCheck` to a convenient keymap.
@@ -200,6 +214,7 @@ bind `:GkeepCheck` to a convenient keymap.
 https://user-images.githubusercontent.com/506791/127721475-6bf500ac-e5e6-49b4-9886-1ece02cfead8.mp4
 
 ### Links
+
 You can embed links to other notes within a note. The format for a link is
 `[visible text](note_id)`. You can quickly get a link to a note using the
 `:GkeepYank` command. To jump to a link under your cursor, use the `:GkeepGoto`
@@ -222,13 +237,14 @@ The search is case-insensitive, and will look for matches in the note title and
 text. Matching is exact, not fuzzy.
 
 #### Flags
+
 There is a special syntax to let you filter notes by type. Notes can be
 `[p]inned`, `[a]rchived`, or `[t]rashed`. You can use the following flags to
 specify the desired behavior:
 
-* `-`: Exclude notes of the specified type
-* `+`: Include notes of the specified type
-* `=`: Only show notes of the specified type
+- `-`: Exclude notes of the specified type
+- `+`: Include notes of the specified type
+- `=`: Only show notes of the specified type
 
 ```
 ╭─────────────╮
@@ -255,9 +271,11 @@ is not the flag.
 ```
 
 #### Labels and colors
+
 You can search for notes with a specific label or color by using `label:<label>`
 and `color:<color>`. This can be abbreviated as `l:<label>` and `c:<color>`. To
 specify multiple labels or colors, separate them with a comma.
+
 ```
 ╭────────────────────────╮
 │🔍 l:software,journal   │  // Search notes with either label
@@ -282,15 +300,17 @@ For example, if you have the labels `software`, `vim`, and `journal`, you could
 search for the software label with `l:s`, since no other labels start with "s".
 
 #### Examples
+
 Some more query examples:
-* `vim l:software +a` - Search for `vim` among notes with the `software` label,
-    including archived notes
-* `code outline l:software,vim c:red` - Search red notes with either a
-    `software` or `vim` label that contain the text "code outline"
+
+- `vim l:software +a` - Search for `vim` among notes with the `software` label,
+  including archived notes
+- `code outline l:software,vim c:red` - Search red notes with either a
+  `software` or `vim` label that contain the text "code outline"
 
 ### Ephemeral notes
 
-The default operation for gkeep is to *not* save your files to disk. The note
+The default operation for gkeep is to _not_ save your files to disk. The note
 data will be cached locally in a json file (under neovim's cache directory), but
 no note files will exist directly. Notes are accessed by using a buffer name
 that looks like `gkeep://{id}/{title}.keep`. These buffers can be edited and
@@ -334,22 +354,22 @@ If you have
 you can use it to search and select your notes. There are two pickers
 that you can use:
 
-* `:Telescope gkeep` - Search for and open a note
-* `:Telescope gkeep link` - Search for a note and insert a link to it
+- `:Telescope gkeep` - Search for and open a note
+- `:Telescope gkeep link` - Search for a note and insert a link to it
   at the current cursor position (see [links](#links))
 
 Additionally, each of these pickers can be configured to use a different
 type of search. The two options are:
 
-* `"all_text"` - Searches the title and contents of all notes and uses
+- `"all_text"` - Searches the title and contents of all notes and uses
   the same query syntax as the [search](#search) function. With this
   method, the searching happens in a thread in python and asynchronously reports
   results to telescope, which does a minimal amount of sorting.
-* `"title"` - Searches only the titles of notes. With this method,
+- `"title"` - Searches only the titles of notes. With this method,
   telescope fetches the note titles from the python process and
   sorts/filters like usual.
 
-``` lua
+```lua
 require("telescope").setup({
   -- You can optionally configure the search method for each of the pickers.
   -- Below are the default values.
@@ -367,22 +387,22 @@ require('telescope').load_extension('gkeep')
 ### Neorg
 
 If you have [neorg](https://github.com/vhyrro/neorg) installed, gkeep will
-automatically enable support for it (check that it's working with `:checkhealth
-gkeep`). You will then be able to use the [note list](#note-list) to create
+automatically enable support for it (check that it's working with `:checkhealth gkeep`). You will then be able to use the [note list](#note-list) to create
 Neorg notes or change existing notes to be Neorg notes. Gkeep will interact
 minimally with the `@document.meta` tag, but otherwise it will simply function
 as a storage backend for your notes.
 
 **@document.meta** \
 gkeep cares about three entries in the document meta:
-* ``title:`` This will be used as the title of the note.
-* ``categories:`` Gkeep will look for labels in here. Note that the [neorg
-    spec](https://github.com/vhyrro/neorg/blob/main/docs/NFF-0.1-spec.md#data-tags)
-    specifies that categories are *space*-separated. Gkeep will handle it if
-    your labels have spaces in them. You can also add categories here that are
-    *not* Google Keep labels and gkeep will ignore them.
-* ``gkeep:`` Gkeep stores the ID of the note here. Do not remove it or you will
-    end up creating duplicate notes.
+
+- `title:` This will be used as the title of the note.
+- `categories:` Gkeep will look for labels in here. Note that the [neorg
+  spec](https://github.com/vhyrro/neorg/blob/main/docs/NFF-0.1-spec.md#data-tags)
+  specifies that categories are _space_-separated. Gkeep will handle it if
+  your labels have spaces in them. You can also add categories here that are
+  _not_ Google Keep labels and gkeep will ignore them.
+- `gkeep:` Gkeep stores the ID of the note here. Do not remove it or you will
+  end up creating duplicate notes.
 
 Changing the `title:` and `categories:` will edit the note title and labels,
 just like for a normal note.
@@ -391,20 +411,20 @@ just like for a normal note.
 
 The following highlight groups can be overridden
 
-Group           | Description
----             | ---
-`GkeepStatus`   | The status string in the upper right of the menu
-`GKeepRed`      | The color of Red note icons
-`GKeepOrange`   | The color of Orange note icons
-`GKeepYellow`   | The color of Yellow note icons
-`GKeepGreen`    | The color of Green note icons
-`GKeepTeal`     | The color of Teal note icons
-`GKeepBlue`     | The color of Blue note icons
-`GKeepDarkBlue` | The color of DarkBlue note icons
-`GKeepPurple`   | The color of Purple note icons
-`GKeepPink`     | The color of Pink note icons
-`GKeepBrown`    | The color of Brown note icons
-`GKeepGray`     | The color of Gray note icons
+| Group           | Description                                      |
+| --------------- | ------------------------------------------------ |
+| `GkeepStatus`   | The status string in the upper right of the menu |
+| `GKeepRed`      | The color of Red note icons                      |
+| `GKeepOrange`   | The color of Orange note icons                   |
+| `GKeepYellow`   | The color of Yellow note icons                   |
+| `GKeepGreen`    | The color of Green note icons                    |
+| `GKeepTeal`     | The color of Teal note icons                     |
+| `GKeepBlue`     | The color of Blue note icons                     |
+| `GKeepDarkBlue` | The color of DarkBlue note icons                 |
+| `GKeepPurple`   | The color of Purple note icons                   |
+| `GKeepPink`     | The color of Pink note icons                     |
+| `GKeepBrown`    | The color of Brown note icons                    |
+| `GKeepGray`     | The color of Gray note icons                     |
 
 ## FAQ
 
@@ -419,15 +439,15 @@ Google has recently released an [official API for Google
 Keep](https://developers.google.com/keep/api). Since gkeep.nvim has roughly two
 different modes of operation, let's evaluate it for each:
 
-* **With notes synced as files:** The API has no concept of 'versions' or delta
-    updates like gkeepapi. This means that in order to keep the files in sync,
-    we would have to check every single one of them against the cloud version on
-    startup. This is prohibitively time consuming and wasteful of CPU and
-    bandwidth.
-* **With ephemeral notes, no files:** On the surface the API should be great for
-    this, but it is lacking key features that we want. The biggest missing
-    pieces are search and labels, without which we would have no way to navigate
-    notes except scrolling down a list.
+- **With notes synced as files:** The API has no concept of 'versions' or delta
+  updates like gkeepapi. This means that in order to keep the files in sync,
+  we would have to check every single one of them against the cloud version on
+  startup. This is prohibitively time consuming and wasteful of CPU and
+  bandwidth.
+- **With ephemeral notes, no files:** On the surface the API should be great for
+  this, but it is lacking key features that we want. The biggest missing
+  pieces are search and labels, without which we would have no way to navigate
+  notes except scrolling down a list.
 
 If the API gets updated in the future to better support one or both of these
 workflows, I'll consider migrating to it.
@@ -436,6 +456,6 @@ workflows, I'll consider migrating to it.
 
 These are Google Keep features that are currently unsupported by gkeep.
 
-* attachments
-* collaborators
-* reminders
+- attachments
+- collaborators
+- reminders
