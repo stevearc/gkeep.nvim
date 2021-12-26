@@ -3,7 +3,7 @@ setlocal expandtab foldmethod=expr foldexpr=gkeep#foldexpr()
 set comments=b:*,b:-,b:+,b:•
 setlocal autoindent
 set conceallevel=2
-set concealcursor=nc
+set concealcursor=
 
 " text-width autowrap doesn't insert bullets
 setlocal formatoptions-=c
