@@ -43,6 +43,7 @@ def get_local_changed_file(
 
 
 def render_note_line(
+    vim: Nvim,
     config: Config,
     api: KeepApi,
     row: int,
@@ -78,7 +79,11 @@ def render_note_line(
     if not entry:
         entry = "<No title>"
     pieces.append(entry)
-    return "".join(pieces).ljust(config.width)
+    text = "".join(pieces)
+    length = vim.strwidth(text)
+    if length < config.width:
+        text += " " * (config.width - length)
+    return text
 
 
 def render_note_list(
@@ -87,7 +92,7 @@ def render_note_list(
     lines = []
     highlights: t.List[t.Tuple[str, int, int, int]] = []
     for i, note in enumerate(notes):
-        line = render_note_line(config, api, i, note, highlights)
+        line = render_note_line(vim, config, api, i, note, highlights)
         lines.append(line)
     buf.options["modifiable"] = True
     buf[:] = lines

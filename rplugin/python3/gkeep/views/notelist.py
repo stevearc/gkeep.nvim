@@ -158,7 +158,9 @@ class NoteList(View):
             return
         row = self.notes.index(note)
         highlights: t.List[t.Tuple[str, int, int, int]] = []
-        line = render_note_line(self._config, self._api, row, note, highlights)
+        line = render_note_line(
+            self._vim, self._config, self._api, row, note, highlights
+        )
         bufnr.options["modifiable"] = True
         bufnr[row : row + 1] = [line]
         bufnr.options["modifiable"] = False
