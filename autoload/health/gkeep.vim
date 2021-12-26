@@ -43,6 +43,9 @@ function! health#gkeep#check()
   if health.support_neorg
     call health#report_ok("Neorg support enabled")
   endif
+  if !empty(health.keyring_err)
+    call health#report_error("Error with keyring provider: " . health.keyring_err)
+  endif
 
   let status = GkeepStatus()
   if !empty(status)

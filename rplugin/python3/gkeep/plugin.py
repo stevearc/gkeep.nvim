@@ -155,11 +155,18 @@ class GkeepPlugin:
             pieces = email.split("@")
             pieces[0] = pieces[0][:3] + "*" * (len(pieces[0]) - 3)
             email = "@".join(pieces)
+        try:
+            keyring.get_password("google-keep-token", email or "")
+        except Exception as e:
+            keyring_err = str(e)
+        else:
+            keyring_err = ""
         return {
             "logged_in": self._api.is_logged_in,
             "email": email,
             "support_neorg": self._config.support_neorg,
             "sync_dir": self._config.sync_dir,
+            "keyring_err": keyring_err,
         }
 
     @pynvim.function("GkeepStatus", sync=True)
