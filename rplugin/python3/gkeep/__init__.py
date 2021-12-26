@@ -1,10 +1,13 @@
 import importlib.util
 import subprocess
 import sys
-from typing import Any
+from types import ModuleType
+from typing import Any, Optional
 
 
 class LazyModule:
+    _mod: Optional[ModuleType]
+
     def __init__(self, module_name: str):
         self._module_name = module_name
         self._mod = None
@@ -34,7 +37,7 @@ try:
 except ImportError:
     modules = ["gkeepapi", "keyring"]
     if sys.version_info < (3, 8):
-        modules.apend("typing-extensions")
+        modules.append("typing-extensions")
     subprocess.call([sys.executable, "-m", "pip", "install", "-q"] + modules)
     try:
         import gkeepapi
