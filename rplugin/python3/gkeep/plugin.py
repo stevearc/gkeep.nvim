@@ -32,6 +32,7 @@ else:
     from typing import TypedDict
 
 logger = logging.getLogger(__name__)
+LINK_RE = re.compile(r"\[[^\]]*\]\(([^\)]*)\)")
 
 
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
@@ -783,6 +784,23 @@ class GkeepPlugin:
         elif "unnamed" in self._vim.options["clipboard"]:
             self._vim.funcs.setreg("*", line)
 
+    @pynvim.command("GkeepUpdateLinks", sync=True)
+    @require_state(State.Running)
+    def cmd_update_links(self) -> None:
+        buffer = self._vim.current.buffer
+        lines = buffer[:]
+
+        def update_link(match: re.Match) -> str:
+            note = self._api.get(match[1])
+            if note is not None:
+                return f"[{note.title}]({note.id})"
+            return match[0]
+
+        for i, line in enumerate(lines):
+            new_line = LINK_RE.sub(update_link, line)
+            if line != new_line:
+                buffer[i] = new_line
+
     def _find_markdown_link(self, line: str, col: int) -> t.Optional[str]:
         try:
             link_start = line.rindex("[", 0, col)
@@ -792,8 +810,7 @@ class GkeepPlugin:
             link_end = line.index(")", col)
         except ValueError:
             return None
-        id_re = re.compile(r"\[[^\]]*\]\(([^\)]*)\)")
-        match = id_re.match(line[link_start : link_end + 1])
+        match = LINK_RE.match(line[link_start : link_end + 1])
         if match:
             return match[1]
         else:

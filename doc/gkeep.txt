@@ -64,6 +64,11 @@ COMMANDS                                                         *gkeep-commands
 :GkeepYank
     Copy a document link to the current note
 
+                                                              *:GkeepUpdateLinks*
+:GkeepUpdateLinks
+    Updates all links in the current note to make their text match the title
+    of the linked note
+
                                                                     *:GkeepCheck*
 :GkeepCheck
     Toggle the checkbox of the item under the cursor
