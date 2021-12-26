@@ -22,7 +22,9 @@ class NoteView:
             return
         url.title = note.title
         ext = util.get_ext(bufnr.name)
-        bufnr.options["filetype"] = self._config.ft_from_ext(ext)
+        ft = self._config.ft_from_ext(ext)
+        if ft != bufnr.options["filetype"]:
+            bufnr.options["filetype"] = ft
         bufnr[:] = list(parser.serialize(self._config, note))
         bufnr.options["modified"] = False
         util.set_note_opts_and_vars(note, bufnr)
