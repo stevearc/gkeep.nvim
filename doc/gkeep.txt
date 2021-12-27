@@ -77,6 +77,10 @@ COMMANDS                                                         *gkeep-commands
 :GkeepSortChecked
     Sorts completed items to the bottom of the list
 
+                                                             *:GkeepClearChecked*
+:GkeepClearChecked
+    Deletes completed items from the list
+
 ===============================================================================
 OPTIONS                                                           *gkeep-options*
 

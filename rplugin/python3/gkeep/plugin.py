@@ -17,6 +17,7 @@ from gkeep.api import KeepApi
 from gkeep.config import Config, State
 from gkeep.modal import Align, ConfirmResult
 from gkeep.parser import ALLOWED_EXT, keep
+from gkeep.parser.keep import LIST_ITEM_RE
 from gkeep.query import Query
 from gkeep.status import get_status
 from gkeep.thread_util import background
@@ -917,6 +918,26 @@ class GkeepPlugin:
         # Restore the sort order so that the note won't be changed until :write
         for item in items:
             item._sort = item_sorts[item.id]
+
+    @pynvim.command("GkeepClearChecked", sync=True)
+    @unwrap_args
+    def cmd_clear_checked(self) -> None:
+        bufnr = self._vim.current.buffer
+        url = parser.url_from_file(self._config, bufnr.name, bufnr)
+        if url is None:
+            return util.echoerr(self._vim, "Not inside a Google Keep note")
+        note = self._api.get(url.id)
+        if note is None:
+            return
+        if util.get_type(note) != NoteEnum.LIST:
+            return util.echoerr(self._vim, "Note is not a list")
+        lines = bufnr[:]
+
+        def is_not_checked(line: str) -> bool:
+            match = LIST_ITEM_RE.match(line)
+            return not match or match[2].lower() != "x"
+
+        bufnr[:] = list(filter(is_not_checked, lines))
 
 
 def _complete_arg_list(arg_lead: str, options: t.Iterable[str]) -> t.List[str]:

@@ -1,5 +1,6 @@
 :GkeepBrowse	gkeep.txt	/*:GkeepBrowse*
 :GkeepCheck	gkeep.txt	/*:GkeepCheck*
+:GkeepClearChecked	gkeep.txt	/*:GkeepClearChecked*
 :GkeepClose	gkeep.txt	/*:GkeepClose*
 :GkeepEnter	gkeep.txt	/*:GkeepEnter*
 :GkeepGoto	gkeep.txt	/*:GkeepGoto*
@@ -9,6 +10,7 @@
 :GkeepOpen	gkeep.txt	/*:GkeepOpen*
 :GkeepPopup	gkeep.txt	/*:GkeepPopup*
 :GkeepRefresh	gkeep.txt	/*:GkeepRefresh*
+:GkeepSortChecked	gkeep.txt	/*:GkeepSortChecked*
 :GkeepSync	gkeep.txt	/*:GkeepSync*
 :GkeepToggle	gkeep.txt	/*:GkeepToggle*
 :GkeepUpdateLinks	gkeep.txt	/*:GkeepUpdateLinks*
