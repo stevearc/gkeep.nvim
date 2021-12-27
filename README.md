@@ -136,6 +136,7 @@ password again. To remove the stored credentials from your system, run
 | `:GkeepYank`        |                                      | Copy a document link to the current note (see [links](#links))                      |
 | `:GkeepUpdateLinks` |                                      | Updates links in the note to match their titles                                     |
 | `:GkeepCheck`       |                                      | Toggle the checkbox of the item under cursor (see [list notes](#lists))             |
+| `:GkeepSortChecked` |                                      | Sorts completed items to the bottom of the list                                     |
 
 Additionally, there is the function `GkeepStatus()` which returns the current
 status message (usually about syncing notes). This can be used in your

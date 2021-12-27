@@ -11,6 +11,7 @@
 :GkeepRefresh	gkeep.txt	/*:GkeepRefresh*
 :GkeepSync	gkeep.txt	/*:GkeepSync*
 :GkeepToggle	gkeep.txt	/*:GkeepToggle*
+:GkeepUpdateLinks	gkeep.txt	/*:GkeepUpdateLinks*
 :GkeepYank	gkeep.txt	/*:GkeepYank*
 Gkeep	gkeep.txt	/*Gkeep*
 g:gkeep_icons	gkeep.txt	/*g:gkeep_icons*

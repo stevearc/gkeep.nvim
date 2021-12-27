@@ -73,6 +73,10 @@ COMMANDS                                                         *gkeep-commands
 :GkeepCheck
     Toggle the checkbox of the item under the cursor
 
+                                                              *:GkeepSortChecked*
+:GkeepSortChecked
+    Sorts completed items to the bottom of the list
+
 ===============================================================================
 OPTIONS                                                           *gkeep-options*
 
