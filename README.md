@@ -106,6 +106,17 @@ you are NOT using python 3.8+, you will also need to pip install
 
 Run `:checkhealth gkeep` to confirm everything is set up properly
 
+**A note about keyring**: \
+Keyring is required to store your Google auth token securely. In most cases it
+will work automatically, but if you see an error in your `:checkhealth` output,
+you may need to fiddle with the setup. See the
+[keyring](https://github.com/jaraco/keyring) repo for details about the
+supported backends. Take note of the special instructions for running on
+headless systems or in a docker container if it applies to you. If you
+absolutely cannot get any of the supported backends working, you can `pip install keyrings.alt` to use [an insecure
+backend](https://github.com/jaraco/keyrings.alt), though this has negative
+security implications.
+
 ## Setup
 
 No configuration is necessary to get started, simply run `:GkeepLogin`. It will
