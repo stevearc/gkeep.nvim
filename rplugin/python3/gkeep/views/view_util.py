@@ -75,7 +75,7 @@ def render_note_line(
     if note.pinned:
         pieces.append(config.get_icon("pinned"))
 
-    entry = note.title.strip()
+    entry = note.title
     if not entry:
         entry = "<No title>"
     pieces.append(entry)

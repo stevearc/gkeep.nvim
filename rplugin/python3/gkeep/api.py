@@ -12,6 +12,18 @@ from gkeepapi.node import Label, TopLevelNode
 
 logger = logging.getLogger(__name__)
 
+# Monkey patch the title property because we can't support newlines
+def _get_title(self: TopLevelNode) -> str:
+    return self._title.strip().replace("\n", " ")
+
+
+def _set_title(self: TopLevelNode, title: str) -> None:
+    self._title = title
+    self.touch(True)
+
+
+TopLevelNode.title = property(_get_title, _set_title)
+
 
 def cmp(a: NoteType, b: NoteType) -> int:
     if a.pinned != b.pinned:

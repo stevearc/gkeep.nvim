@@ -49,7 +49,7 @@ def serialize(note: TopLevelNode) -> t.Iterator[str]:
 
 
 def _gen_header(note: TopLevelNode) -> t.Iterator[str]:
-    yield f"# {note.title.strip()}"
+    yield f"# {note.title}"
     yield f"id: {note.id}"
     labels = []
     for label in note.labels.all():
