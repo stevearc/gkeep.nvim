@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Monkey patch the title property because we can't support newlines
 def _get_title(self: TopLevelNode) -> str:
-    return self._title.strip().replace("\n", " ")
+    return self._title.strip().replace("\n", " ") if self._title else self._title
 
 
 def _set_title(self: TopLevelNode, title: str) -> None:
