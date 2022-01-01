@@ -3,6 +3,7 @@ import logging
 import gkeep.api
 import gkeep.config
 from gkeep import parser, util
+from gkeep.config import KEEP_FT, Config
 from gkeep.util import NoteUrl
 from pynvim.api import Buffer, Nvim
 
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class NoteView:
-    def __init__(self, vim: Nvim, config: gkeep.config.Config, api: gkeep.api.KeepApi):
+    def __init__(self, vim: Nvim, config: Config, api: gkeep.api.KeepApi):
         self._vim = vim
         self._config = config
         self._api = api
@@ -25,6 +26,8 @@ class NoteView:
         ft = self._config.ft_from_ext(ext)
         if ft != bufnr.options["filetype"]:
             bufnr.options["filetype"] = ft
+        if ft == KEEP_FT:
+            bufnr.options["syntax"] = "keep"
         bufnr[:] = list(parser.serialize(self._config, note))
         bufnr.options["modified"] = False
         util.set_note_opts_and_vars(note, bufnr)

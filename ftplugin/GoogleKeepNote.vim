@@ -1,4 +1,3 @@
-set syntax=keep
 setlocal expandtab foldmethod=expr foldexpr=gkeep#foldexpr()
 set comments=b:*,b:-,b:+,b:•
 setlocal autoindent
