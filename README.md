@@ -30,6 +30,7 @@ Neovim integration for [Google Keep](https://keep.google.com/), built using
   - [Neorg](#neorg)
 - [Highlight](#highlight)
 - [FAQ](#faq)
+- [Troubleshooting](#troubleshooting)
 
 ## Installation
 
@@ -472,3 +473,13 @@ These are Google Keep features that are currently unsupported by gkeep.
 - attachments
 - collaborators
 - reminders
+
+## Troubleshooting
+
+### Trouble logging in
+
+**Symptom:** When you try to `:GkeepLogin` a browser window is opened and hangs on "one
+moment please...".
+
+**Action:** You are probably trying to log in with a password instead of an _app
+password_. Create an [app password](https://support.google.com/accounts/answer/185833) and use that instead. See #7 for details.
