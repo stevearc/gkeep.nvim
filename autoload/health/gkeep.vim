@@ -1,6 +1,7 @@
 
 
 function! health#gkeep#check()
+  call gkeep#preload()
   call health#report_start('gkeep')
   if !has('python3')
     call health#report_error('Python provider error:', ["gkeep requires python3", "Run :checkhealth provider for more info"])
@@ -33,6 +34,8 @@ function! health#gkeep#check()
 
   if health.logged_in
     call health#report_ok('Logged in as ' . health.email)
+  elseif health.has_token
+    call health#report_warn('Not logged in but auth token exists', 'Try :GkeepOpen')
   else
     call health#report_warn('Not logged in', 'Try :GkeepLogin')
   endif

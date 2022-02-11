@@ -151,24 +151,33 @@ class GkeepPlugin:
     @unwrap_args
     def health_report(self) -> t.Dict[str, t.Any]:
         email = self._api.get_email()
+        token = None
+        try:
+            token = keyring.get_password(
+                "google-keep-token", email or self._config.email or ""
+            )
+        except Exception as e:
+            keyring_err = str(e)
+        else:
+            keyring_err = ""
+        if email is None and token is not None:
+            # We called preload at the top of checkhealth().
+            # Let it run for a second and see if we're logged in after that.
+            time.sleep(0.2)
+            email = self._api.get_email()
         # censor email because we're going to ask people to paste :checkhealth output in
         # github issues
         if email is not None:
             pieces = email.split("@")
             pieces[0] = pieces[0][:3] + "*" * (len(pieces[0]) - 3)
             email = "@".join(pieces)
-        try:
-            keyring.get_password("google-keep-token", email or "")
-        except Exception as e:
-            keyring_err = str(e)
-        else:
-            keyring_err = ""
         return {
             "logged_in": self._api.is_logged_in,
             "email": email,
             "support_neorg": self._config.support_neorg,
             "sync_dir": self._config.sync_dir,
             "keyring_err": keyring_err,
+            "has_token": token is not None,
         }
 
     @pynvim.function("GkeepStatus", sync=True)
