@@ -25,7 +25,7 @@ function! gkeep#foldexpr() abort
   if l:prev == -1
     return 0
   end
-  if match(getline(a:lnum), '^\s*$') != -1
+  if match(getline(v:lnum), '^\s*$') != -1
     return -1
   endif
   let l:prev = l:prev / 4
