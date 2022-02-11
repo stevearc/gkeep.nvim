@@ -631,6 +631,12 @@ class GkeepPlugin:
             try:
                 self._api.login(email, password, sync=False)
             except LoginException as e:
+                if e.args[0] == "BadAuthentication":
+                    util.echoerr(
+                        self._vim,
+                        "Failed to log in: incorrect password",
+                    )
+                    return
                 res = gpsoauth.perform_master_login(email, password, str(getnode()))
                 url = res.get("Url")
                 if url:
