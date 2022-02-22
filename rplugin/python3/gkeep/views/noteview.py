@@ -23,6 +23,8 @@ class NoteView:
             return
         url.title = note.title
         ext = util.get_ext(bufnr.name)
+        if NoteUrl.is_ephemeral(bufnr.name):
+            bufnr.options["buftype"] = "acwrite"
         ft = self._config.ft_from_ext(ext)
         if ft != bufnr.options["filetype"]:
             bufnr.options["filetype"] = ft

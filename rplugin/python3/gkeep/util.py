@@ -159,7 +159,7 @@ def normalize_title(title: str) -> str:
 
 
 def get_ext(filename: str) -> str:
-    name, ext = os.path.splitext(filename)
+    ext = os.path.splitext(filename)[1]
     # Handle the case of an empty title
     if not ext:
         basename = os.path.basename(filename)
