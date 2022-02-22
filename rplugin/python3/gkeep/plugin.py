@@ -615,10 +615,12 @@ class GkeepPlugin:
     @pynvim.command("GkeepLogin", nargs="*", sync=True)
     @require_state(State.Uninitialized, State.Running)
     @unwrap_args
-    def cmd_login(self, email: str = None, password: str = None) -> None:
+    def cmd_login(self, email: t.Optional[str] = None, password: str = None) -> None:
         prompt = partial(
             self._modal.prompt.show, relative="editor", width=60, align=Align.SW
         )
+        if email is None:
+            email = self._config.email
         if email is None:
             return prompt(
                 self.cmd_login, prompt=self._config.get_icon("email") + "Email: "
