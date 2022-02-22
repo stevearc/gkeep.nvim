@@ -50,7 +50,21 @@ class NoteView:
             util.echoerr(self._vim, f"Note {url.id} not found")
             return
 
+        # save win positions
+        saved = []
+        for win in self._vim.windows:
+            if win.buffer == bufnr:
+                saved.append((win, win.cursor))
+
         parser.parse(self._api, self._config, bufnr, note)
         url.title = note.title
         self.render(bufnr, url)
         bufnr.name = url.bufname(self._api, self._config, note)
+
+        # restore win positions
+        for (win, cursor) in saved:
+            try:
+                win.cursor = cursor
+            except Exception:
+                # Restoring the position may fail e.g. if the file is shorter now
+                pass
