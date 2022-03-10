@@ -32,4 +32,27 @@ M.on_ephemeral_buf_read = function(ft)
   end
 end
 
+local win_positions = {}
+M.save_win_positions = function(bufnr)
+  win_positions = {}
+  for _, winid in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_buf(winid) == bufnr then
+      vim.api.nvim_win_call(winid, function()
+        local view = vim.fn.winsaveview()
+        table.insert(win_positions, { winid, view })
+      end)
+    end
+  end
+end
+
+M.restore_win_positions = function()
+  for _, pair in ipairs(win_positions) do
+    local winid, view = unpack(pair)
+    vim.api.nvim_win_call(winid, function()
+      pcall(vim.fn.winrestview, view)
+    end)
+  end
+  win_positions = {}
+end
+
 return M
