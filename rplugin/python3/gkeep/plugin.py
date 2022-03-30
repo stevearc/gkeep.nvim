@@ -224,7 +224,11 @@ class GkeepPlugin:
     @background
     @require_state(State.Uninitialized)
     def _resume(self, email: str, token: str, state: t.Optional[t.Any]) -> None:
-        self._api.resume(email, token, state=None, sync=False)
+        try:
+            self._api.resume(email, token, state=None, sync=False)
+        except LoginException as e:
+            self.dispatch("handle_sync_error", str(e))
+            return
         if not self._api.is_logged_in:
             return
         logger.info("Resuming gkeep session for %s", email)
@@ -631,6 +635,22 @@ class GkeepPlugin:
 
         token = keyring.get_password("google-keep-token", email)
         if token:
+            # Call resume directly first so that we can catch credential errors
+            try:
+                self._api.resume(email, token, state=None, sync=False)
+            except LoginException as e:
+                if e.args[0] == "BadAuthentication":
+                    keyring.delete_password("google-keep-token", email)
+                    logger.exception(
+                        "Gkeep failed to log in with token. Removing token and re-prompting login."
+                    )
+                    util.echoerr(
+                        self._vim,
+                        "Gkeep failed to log in with token. Removing token and re-prompting login.",
+                    )
+                    self.cmd_login(email)
+                    return
+                raise
             self._resume(email, token, self._config.load_state())
         elif password is None:
             return prompt(

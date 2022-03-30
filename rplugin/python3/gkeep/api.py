@@ -233,7 +233,9 @@ class KeepApi(Keep):
         return query == self._search_query and self._search_results is None
 
     def logout(self) -> None:
-        self._keep_api.getAuth().logout()
+        auth = self._keep_api.getAuth()
+        if auth is not None:
+            auth.logout()
         self._search_query = None
         self._search_results = None
         self._clear()
