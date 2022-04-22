@@ -606,7 +606,7 @@ class GkeepPlugin:
         self._menu.refresh(True)
 
     @pynvim.command("GkeepLogout", sync=True)
-    @require_state(State.Running, log=True)
+    @require_state(State.Uninitialized, State.Running, log=True)
     @unwrap_args
     def cmd_logout(self) -> None:
         logger.debug("Logging out")
