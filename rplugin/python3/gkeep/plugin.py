@@ -11,6 +11,7 @@ from uuid import getnode
 import gkeep.modal
 import gpsoauth
 import keyring
+import keyring.errors
 import pynvim
 from gkeep import fssync, parser, util
 from gkeep.api import KeepApi
@@ -612,7 +613,11 @@ class GkeepPlugin:
         logger.debug("Logging out")
         email = self._config.email
         if email is not None:
-            keyring.delete_password("google-keep-token", email)
+            try:
+                keyring.delete_password("google-keep-token", email)
+            except keyring.errors.PasswordDeleteError:
+                # This can fail if the password is not found. We don't mind.
+                pass
             self._config.email = None
         self._reset_all_state()
 
