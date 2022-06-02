@@ -17,6 +17,9 @@ function! health#gkeep#check()
     python3 import gkeepapi
     let l:version = py3eval('gkeepapi.__version__')
     call health#report_ok("gkeepapi " . l:version . " installed")
+    python3 import gpsoauth
+    let l:version = py3eval('gpsoauth.__version__')
+    call health#report_ok("gpsoauth " . l:version . " installed")
   endif
   let [ok, error] = provider#pythonx#CheckForModule(exe, 'keyring', 3)
   if !ok
