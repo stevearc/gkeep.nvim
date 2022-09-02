@@ -137,6 +137,12 @@ class GkeepPlugin:
         else:
             self._sync = fssync.NoopSync(self._api)
         self._start_callbacks: t.List[t.Callable[[], None]] = []
+        # The keyrings.alt backend will prompt the user for a password when setting up,
+        # but that will always fail (see https://github.com/stevearc/gkeep.nvim/issues/12)
+        # Monkey patch it to prompt the user inside of neovim instead.
+        import getpass
+
+        getpass.getpass = lambda msg: vim.call("inputsecret", msg)  # type: ignore
 
     @pynvim.shutdown_hook
     def on_shutdown(self) -> None:
