@@ -157,7 +157,9 @@ def _write_meta(lines: t.List[str], header: Header, id: str, title: str) -> None
         lines[1] = f"id: {id}"
 
 
-def write_file_meta(filename: str, id: str, title: str, file: TFile = None) -> None:
+def write_file_meta(
+    filename: str, id: str, title: str, file: t.Optional[TFile] = None
+) -> None:
     if file is None:
         file = filename
     lines = list(read_lines(file))

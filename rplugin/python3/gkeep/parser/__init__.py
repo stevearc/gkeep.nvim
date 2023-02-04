@@ -51,7 +51,7 @@ def ext_from_filetype(filetype: str) -> str:
 
 
 def serialize(
-    config: Config, note: TopLevelNode, filetype: str = None
+    config: Config, note: TopLevelNode, filetype: t.Optional[str] = None
 ) -> t.Iterator[str]:
     if filetype is None:
         filetype = get_filetype(config, note)
@@ -93,7 +93,7 @@ def parse(api: KeepApi, config: Config, file: TFile, note: TopLevelNode) -> None
 
 
 def url_from_file(
-    config: Config, filename: str, file: TFile = None
+    config: Config, filename: str, file: t.Optional[TFile] = None
 ) -> t.Optional[NoteUrl]:
     if file is None:
         file = filename
@@ -117,7 +117,9 @@ def url_from_file(
     return NoteUrl(header.id, header.title or basename)
 
 
-def write_file_metadata(filename: str, id: str, title: str, file: TFile = None) -> None:
+def write_file_metadata(
+    filename: str, id: str, title: str, file: t.Optional[TFile] = None
+) -> None:
     ext = util.get_ext(filename)
     if ext == ".norg":
         neorg.write_file_meta(filename, id, title, file)

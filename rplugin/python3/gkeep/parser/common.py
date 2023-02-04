@@ -16,7 +16,7 @@ def merge_labels(note: TopLevelNode, labels: t.Sequence[Label]) -> None:
 TFile = t.Union[str, t.Sequence[str], Buffer]
 
 
-def read_lines(file: TFile, count: int = None) -> t.Sequence[str]:
+def read_lines(file: TFile, count: t.Optional[int] = None) -> t.Sequence[str]:
     if isinstance(file, str):
         ret = []
         with open(file, "r") as ifile:

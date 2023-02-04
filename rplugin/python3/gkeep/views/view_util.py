@@ -132,7 +132,9 @@ class NoteTypeEditor:
         )
 
     def change_type(
-        self, note: NoteType, callback: t.Callable[[NoteType, NoteType], None] = None
+        self,
+        note: NoteType,
+        callback: t.Optional[t.Callable[[NoteType, NoteType], None]] = None,
     ) -> None:
         self._callback = callback
         layout = self.get_note_type_layout()

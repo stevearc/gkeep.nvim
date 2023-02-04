@@ -66,9 +66,9 @@ class Config:
         cache_dir: t.Union[str, Path],
         sync_dir: t.Optional[t.Union[str, Path]] = None,
         support_neorg: bool = False,
-        icons: t.Dict[str, str] = None,
-        icon_width: t.Dict[str, int] = None,
-        log_levels: t.Dict[str, int] = None,
+        icons: t.Optional[t.Dict[str, str]] = None,
+        icon_width: t.Optional[t.Dict[str, int]] = None,
+        log_levels: t.Optional[t.Dict[str, int]] = None,
         width: int = 32,
         sync_archived_notes: bool = False,
     ) -> None:
@@ -93,7 +93,7 @@ class Config:
         if sync_dir:
             sync_dir = os.path.expanduser(sync_dir)
         sync_archived_notes = bool(vim.vars.get("gkeep_sync_archived", False))
-        neorg = vim.exec_lua("return package.loaded.neorg ~= nil")
+        neorg = t.cast(bool, vim.exec_lua("return package.loaded.neorg ~= nil"))
         nerd_font = bool(vim.vars.get("gkeep_nerd_font", True))
         user_icons = vim.vars.get("gkeep_icons", {})
         icons = {}
@@ -122,7 +122,9 @@ class Config:
         )
 
     def reload_from_vim(self, vim: pynvim.Nvim) -> None:
-        self._support_neorg = vim.exec_lua("return package.loaded.neorg ~= nil")
+        self._support_neorg = t.cast(
+            bool, vim.exec_lua("return package.loaded.neorg ~= nil")
+        )
 
     def get_icon(self, icon: str) -> str:
         return self._icons.get(icon, "")

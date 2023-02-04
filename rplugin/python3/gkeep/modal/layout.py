@@ -94,9 +94,9 @@ def open_win(
     anchor: Anchor = Anchor.NW,
     width: t.Union[int, float] = 0.9,
     height: t.Union[int, float] = 0.9,
-    win: Window = None,
+    win: t.Optional[Window] = None,
     border: "TWinBorder" = "rounded",
-    align: Align = None,
+    align: t.Optional[Align] = None,
     scrollable: bool = False,
 ) -> Window:
     width, height, total_width, total_height = calc_dim(
@@ -176,7 +176,9 @@ T = t.TypeVar("T")
 
 class Element(t.Generic[T]):
     def __init__(
-        self, value: T, display: t.Union[str, t.List[t.Tuple[str, str]]] = None
+        self,
+        value: T,
+        display: t.Optional[t.Union[str, t.List[t.Tuple[str, str]]]] = None,
     ):
         self.value = value
         if display is None:

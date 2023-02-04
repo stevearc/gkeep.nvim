@@ -244,7 +244,9 @@ class NoteList(View):
             self.rerender_note(note)
         self.dispatch("sync")
 
-    def new_note(self, note_type: NoteFormat = None, title: str = None) -> None:
+    def new_note(
+        self, note_type: t.Optional[NoteFormat] = None, title: t.Optional[str] = None
+    ) -> None:
         if note_type is None:
             layout = self._note_type_editor.get_note_type_layout()
             self._modal.confirm.show(

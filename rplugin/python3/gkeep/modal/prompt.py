@@ -27,10 +27,10 @@ class Prompt:
     def show(
         self,
         callback: t.Callable[[str], None],
-        on_cancel: t.Callable[[], None] = None,
-        on_change: t.Callable[[str], None] = None,
+        on_cancel: t.Optional[t.Callable[[], None]] = None,
+        on_change: t.Optional[t.Callable[[str], None]] = None,
         prompt: str = "➤ ",
-        text: str = None,
+        text: t.Optional[str] = None,
         secret: bool = False,
         **kwargs: t.Any,
     ) -> None:
@@ -53,7 +53,7 @@ class Prompt:
         if text is not None:
             self._vim.funcs.feedkeys(text)
 
-    def close(self, text: str = None) -> None:
+    def close(self, text: t.Optional[str] = None) -> None:
         if self._window is not None and self._window.valid:
             self._window.api.close(True)
         self._window = None

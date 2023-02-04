@@ -1,4 +1,5 @@
 import os
+import typing as t
 from copy import deepcopy
 from pathlib import Path
 
@@ -40,7 +41,7 @@ def write_note(
     api: KeepApi,
     config: Config,
     note: TopLevelNode,
-    text: str = None,
+    text: t.Optional[str] = None,
     strip_id: bool = False,
 ) -> str:
     fname = NoteUrl.from_note(note).filepath(api, config, note)

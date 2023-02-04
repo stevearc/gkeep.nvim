@@ -102,7 +102,11 @@ class View(ABC):
         return True
 
     def keymap(
-        self, lhs: str, rhs: str, modes: str = "n", opts: t.Dict[str, bool] = None
+        self,
+        lhs: str,
+        rhs: str,
+        modes: str = "n",
+        opts: t.Optional[t.Dict[str, bool]] = None,
     ) -> None:
         if self._bufnr:
             if opts is None:

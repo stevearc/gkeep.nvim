@@ -162,7 +162,7 @@ class Menu(View):
         else:
             self.open(enter, position)
 
-    def render(self, jump_to_lnum: int = None, num_lines: int = -1) -> None:
+    def render(self, jump_to_lnum: t.Optional[int] = None, num_lines: int = -1) -> None:
         bufnr = self.bufnr
         if bufnr is None:
             return
@@ -292,7 +292,7 @@ class Menu(View):
         else:
             util.echoerr(self._vim, "Can only rename labels and searches")
 
-    def _rename_search(self, item: MenuItem, name: str = None) -> None:
+    def _rename_search(self, item: MenuItem, name: t.Optional[str] = None) -> None:
         if name is None:
             self._modal.prompt.show(
                 partial(self._rename_search, item), text=item.name, width=1.0
@@ -303,7 +303,7 @@ class Menu(View):
             self.render()
             self.dispatch("sync")
 
-    def _rename_label(self, item: MenuItem, name: str = None) -> None:
+    def _rename_label(self, item: MenuItem, name: t.Optional[str] = None) -> None:
         if self._config.sync_dir is not None:
             util.echoerr(
                 self._vim, "Renaming labels is not supported with g:gkeep_sync_dir set"
@@ -320,7 +320,9 @@ class Menu(View):
                 self.refresh()
                 self.dispatch("sync")
 
-    def cmd_delete(self, force: bool = None, item: t.Optional[MenuItem] = None) -> None:
+    def cmd_delete(
+        self, force: t.Optional[bool] = None, item: t.Optional[MenuItem] = None
+    ) -> None:
         if item is None:
             item = self._get_item_under_cursor()
         if item is None:

@@ -381,7 +381,7 @@ class GkeepPlugin:
     @pynvim.function("_gkeep_prompt_close", sync=True)
     @unwrap_args
     @require_state(inv=[State.ShuttingDown])
-    def close_prompt(self, text: str = None) -> None:
+    def close_prompt(self, text: t.Optional[str] = None) -> None:
         self._modal.prompt.close(text)
 
     @pynvim.function("_gkeep_omnifunc", sync=True)
@@ -634,7 +634,9 @@ class GkeepPlugin:
     @pynvim.command("GkeepLogin", nargs="*", sync=True)
     @require_state(State.Uninitialized, State.Running)
     @unwrap_args
-    def cmd_login(self, email: t.Optional[str] = None, password: str = None) -> None:
+    def cmd_login(
+        self, email: t.Optional[str] = None, password: t.Optional[str] = None
+    ) -> None:
         prompt = partial(
             self._modal.prompt.show, relative="editor", width=60, align=Align.SW
         )
@@ -818,7 +820,9 @@ class GkeepPlugin:
         )
 
     @require_state(State.Running, log=True)
-    def _new_note(self, type: NoteFormat = None, title: str = None) -> None:
+    def _new_note(
+        self, type: t.Optional[NoteFormat] = None, title: t.Optional[str] = None
+    ) -> None:
         self._notelist.new_note(type, title)
 
     @pynvim.command("GkeepYank", sync=True)

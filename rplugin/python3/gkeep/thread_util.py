@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 F = t.TypeVar("F", bound=t.Callable[..., t.Any])
 
 
-def wrap_lock(lock: threading.Lock, func: F, max_waiting: int = None) -> F:
+def wrap_lock(lock: threading.Lock, func: F, max_waiting: t.Optional[int] = None) -> F:
     if max_waiting is None:
 
         @wraps(func)

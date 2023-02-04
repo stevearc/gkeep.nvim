@@ -148,7 +148,9 @@ def serialize(note: Note) -> t.Iterator[str]:
         yield from lines
 
 
-def write_file_meta(filename: str, id: str, title: str, file: TFile = None) -> None:
+def write_file_meta(
+    filename: str, id: str, title: str, file: t.Optional[TFile] = None
+) -> None:
     if file is None:
         file = filename
     lines = read_lines(file)
