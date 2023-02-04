@@ -254,6 +254,10 @@ class GkeepPlugin:
         user_info: t.Any,
         nodes: t.Sequence[t.Any],
     ) -> None:
+        # Reload the config values after we complete the initial sync.
+        # The state of vim may be different now than when we first loaded the plugin,
+        # and now is a good time to re-poll to make sure the values are up-to-date.
+        self._config.reload_from_vim(self._vim)
         updated_notes = self._api.apply_updates(resync, keep_version, user_info, nodes)
         self._config.save_state(self._api.dump())
         logger.debug("Startup sync complete. Updated %d notes", len(updated_notes))

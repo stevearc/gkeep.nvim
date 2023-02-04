@@ -102,7 +102,6 @@ class Query:
         self.labels.append(label.lower())
 
     def _add_color(self, color: t.Union["ColorValue", str]) -> None:
-
         if isinstance(color, str):
             color = ColorValue(color.upper())
         if self.colors is None:

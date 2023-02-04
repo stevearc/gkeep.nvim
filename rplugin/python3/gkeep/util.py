@@ -134,7 +134,6 @@ class NoteFormat(enum.Enum):
 
 
 def get_type(note: TopLevelNode) -> NoteEnum:
-
     if note.type == NodeType.Note:
         return NoteEnum.NOTE
     elif note.type == NodeType.List:

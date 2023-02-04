@@ -93,7 +93,7 @@ class Config:
         if sync_dir:
             sync_dir = os.path.expanduser(sync_dir)
         sync_archived_notes = bool(vim.vars.get("gkeep_sync_archived", False))
-        neorg = vim.exec_lua('return pcall(require, "neorg")')
+        neorg = vim.exec_lua("return package.loaded.neorg ~= nil")
         nerd_font = bool(vim.vars.get("gkeep_nerd_font", True))
         user_icons = vim.vars.get("gkeep_icons", {})
         icons = {}
@@ -120,6 +120,9 @@ class Config:
             width,
             sync_archived_notes,
         )
+
+    def reload_from_vim(self, vim: pynvim.Nvim) -> None:
+        self._support_neorg = vim.exec_lua("return package.loaded.neorg ~= nil")
 
     def get_icon(self, icon: str) -> str:
         return self._icons.get(icon, "")
