@@ -37,6 +37,20 @@ Neovim integration for [Google Keep](https://keep.google.com/), built using
 gkeep supports all the usual plugin managers
 
 <details>
+  <summary>lazy.nvim</summary>
+
+```lua
+{
+  'stevearc/gkeep.nvim',
+  opts = {},
+  -- Optional dependencies
+  dependencies = { "nvim-tree/nvim-web-devicons" },
+}
+```
+
+</details>
+
+<details>
   <summary>Packer</summary>
 
 ```lua
