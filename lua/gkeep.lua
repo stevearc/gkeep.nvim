@@ -14,7 +14,7 @@ M.rename_buffers = function(renames)
     -- *new* buffer for the old file. We need to find and delete that new buffer
     for _, newbuf in ipairs(vim.api.nvim_list_bufs()) do
       if old_name == vim.api.nvim_buf_get_name(newbuf) then
-        vim.api.nvim_buf_set_option(newbuf, "buflisted", false)
+        vim.bo[newbuf].buflisted = false
         vim.api.nvim_buf_delete(newbuf, { force = true })
         break
       end
