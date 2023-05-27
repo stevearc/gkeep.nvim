@@ -24,7 +24,7 @@ def wrap_lock(lock: threading.Lock, func: F, max_waiting: t.Optional[int] = None
         @wraps(func)
         def w(*args, **kwargs):  # type: ignore[no-untyped-def]
             if kwargs:
-                raise Exception(
+                raise ValueError(
                     "Cannot use keyword arguments for @background function with max_waiting"
                 )
             with countlock:

@@ -104,7 +104,7 @@ def open_win(
     )
     if align is not None:
         if relative == "cursor":
-            raise Exception("Align requires relative = win/editor")
+            raise ValueError("Align requires relative = win/editor")
         anchor, row, col = calc_alignment(
             align, width, height, total_width, total_height
         )

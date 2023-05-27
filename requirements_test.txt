@@ -4,7 +4,7 @@ gkeepapi
 isort
 keyring
 mypy
-pylint==2.9.5
+pylint==2.17.4
 pynvim
 pytest
 pytest-cov
