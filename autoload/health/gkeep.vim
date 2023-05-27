@@ -20,6 +20,9 @@ function! health#gkeep#check()
     python3 import gpsoauth
     let l:version = py3eval('gpsoauth.__version__')
     call health#report_ok("gpsoauth " . l:version . " installed")
+    python3 import urllib3
+    let l:version = py3eval('urllib3.__version__')
+    call health#report_ok("urllib3 " . l:version . " installed")
   endif
   let [ok, error] = provider#pythonx#CheckForModule(exe, 'keyring', 3)
   if !ok

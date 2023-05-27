@@ -35,7 +35,8 @@ try:
     if sys.version_info < (3, 8):
         import typing_extensions
 except ImportError:
-    modules = ["gkeepapi", "keyring"]
+    # gpsoauth doesn't work with urllib3 2.0
+    modules = ["urllib3<2.0", "gkeepapi", "keyring"]
     if sys.version_info < (3, 8):
         modules.append("typing-extensions")
     subprocess.call([sys.executable, "-m", "pip", "install", "-q"] + modules)
