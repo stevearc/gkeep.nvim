@@ -2,8 +2,8 @@ local action_set = require("telescope.actions.set")
 local action_state = require("telescope.actions.state")
 local actions = require("telescope.actions")
 local search = require("telescope._extensions.gkeep.search")
-local title_search = require("telescope._extensions.gkeep.title_search")
 local telescope = require("telescope")
+local title_search = require("telescope._extensions.gkeep.title_search")
 
 -- Create our own mapping because the built-in telescope select action
 -- normalizes the path, which removes the second slash from gkeep://

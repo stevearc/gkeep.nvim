@@ -19,17 +19,19 @@ local function title_search(opts)
     process_complete()
   end
 
-  pickers.new(opts, {
-    prompt_title = "Google Keep Notes",
-    finder = util.DynamicAsyncFinder:new({
-      curr_buf = vim.api.nvim_get_current_buf(),
-      fn = search,
-      entry_maker = util.make_entry,
-    }),
-    sorter = conf.generic_sorter(opts),
-    previewer = util.previewer,
-    attach_mappings = opts.attach_mappings,
-  }):find()
+  pickers
+    .new(opts, {
+      prompt_title = "Google Keep Notes",
+      finder = util.DynamicAsyncFinder:new({
+        curr_buf = vim.api.nvim_get_current_buf(),
+        fn = search,
+        entry_maker = util.make_entry,
+      }),
+      sorter = conf.generic_sorter(opts),
+      previewer = util.previewer,
+      attach_mappings = opts.attach_mappings,
+    })
+    :find()
 end
 
 return title_search

@@ -34,17 +34,19 @@ local function search_picker(opts)
     return score < 0 and 0 or score
   end
 
-  pickers.new(opts, {
-    prompt_title = "Google Keep Notes",
-    finder = util.DynamicAsyncFinder:new({
-      curr_buf = vim.api.nvim_get_current_buf(),
-      fn = search,
-      entry_maker = util.make_entry,
-    }),
-    sorter = sorter,
-    previewer = util.previewer,
-    attach_mappings = opts.attach_mappings,
-  }):find()
+  pickers
+    .new(opts, {
+      prompt_title = "Google Keep Notes",
+      finder = util.DynamicAsyncFinder:new({
+        curr_buf = vim.api.nvim_get_current_buf(),
+        fn = search,
+        entry_maker = util.make_entry,
+      }),
+      sorter = sorter,
+      previewer = util.previewer,
+      attach_mappings = opts.attach_mappings,
+    })
+    :find()
 end
 
 return search_picker
