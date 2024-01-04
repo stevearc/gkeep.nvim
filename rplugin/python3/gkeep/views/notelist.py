@@ -21,6 +21,7 @@ from gkeep.views.view_util import (
 )
 from gkeepapi.node import ColorValue, Note
 from pynvim.api import Buffer, Nvim, Window
+from typing_extensions import assert_never
 
 logger = logging.getLogger(__name__)
 
@@ -277,8 +278,7 @@ class NoteList(View):
         elif type == NoteEnum.LIST:
             note = self._api.createList(title, [("", False)])
         else:
-            util.echoerr(self._vim, f"Unknown note type '{type}'")
-            return
+            assert_never(type)
         if not self.query.pinned(note.pinned):
             note.pinned = not note.pinned
         if self.query.labels:
