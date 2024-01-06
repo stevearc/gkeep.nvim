@@ -31,24 +31,18 @@ sys.modules["gpsoauth"] = LazyModule("gpsoauth")  # type: ignore[assignment]
 try:
     import gkeepapi
     import keyring
-
-    if sys.version_info < (3, 8):
-        import typing_extensions
+    import typing_extensions
 except ImportError:
     # gpsoauth doesn't work with urllib3 2.0
-    modules = ["urllib3<2.0", "gkeepapi", "keyring"]
-    if sys.version_info < (3, 8):
-        modules.append("typing-extensions")
+    modules = ["urllib3<2.0", "gkeepapi", "keyring", "typing-extensions"]
     subprocess.call([sys.executable, "-m", "pip", "install", "-q"] + modules)
     try:
         import gkeepapi
         import keyring
-
-        if sys.version_info < (3, 8):
-            import typing_extensions
+        import typing_extensions
     except ImportError as e:
         raise ImportError(
-            "Could not auto-install gkeepapi and keyring. Please `pip install gkeepapi keyring` in your neovim python environment"
+            "Could not auto-install gkeepapi, keyring, and typing_extensions. Please `pip install gkeepapi keyring typing_extensions` in your neovim python environment"
         ) from e
 
 from gkeep.plugin import GkeepPlugin
