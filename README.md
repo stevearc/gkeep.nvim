@@ -1,5 +1,8 @@
 # Gkeep.nvim
 
+> [!CAUTION]
+> I no longer use Google Keep for notes. The lack of an official API has finally caused me enough pain that I am retiring this plugin.
+
 Neovim integration for [Google Keep](https://keep.google.com/), built using
 [gkeepapi](https://github.com/kiwiz/gkeepapi)
 
